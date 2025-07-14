@@ -3,17 +3,17 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, phone_number=None, password=None, is_staff=False, is_superuser=False, **extra_fields):
+    def create_user(self, email=None, password=None, is_staff=False, is_superuser=False, **extra_fields):
         if not password:
             raise ValueError('User must have a password.')
 
-        if not phone_number:
-            raise ValueError('User must have an phone_number.')
+        if not email:
+            raise ValueError('User must have an email.')
 
         model_data = {'is_staff': is_staff, 'is_superuser': is_superuser}
 
-        if phone_number:
-            model_data['phone_number'] = phone_number
+        if email:
+            model_data['email'] = email
 
 
         user = self.create(**model_data, **extra_fields)
@@ -22,7 +22,7 @@ class UserManager(BaseUserManager):
         return user
 
     
-    def create_superuser(self, phone_number=None,  password=None, **extra_fields):
+    def create_superuser(self, email=None,  password=None, **extra_fields):
 
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
@@ -33,7 +33,7 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True')
 
-        user = self.create_user(phone_number, password, **extra_fields)
+        user = self.create_user(email, password, **extra_fields)
 
         return user
     

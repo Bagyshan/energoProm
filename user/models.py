@@ -70,7 +70,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         if not self.email:
-            raise ValueError('User must have an phone number')
+            raise ValueError('User must have an email')
         super(User, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
