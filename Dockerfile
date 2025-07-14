@@ -7,8 +7,8 @@ RUN mkdir -p /usr/src/app/static
 
 WORKDIR /usr/src/app/
 
-COPY static/ /usr/src/app/static/
-RUN ls -R /usr/src/app/static/
+# COPY static/ /usr/src/app/static/
+# RUN ls -R /usr/src/app/static/
 
 # Устанавливаем зависимости Python
 COPY requirements.txt ./
