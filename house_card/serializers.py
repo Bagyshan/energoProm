@@ -114,7 +114,110 @@ class RouteSerializer(serializers.ModelSerializer):
 
 
 
-class HouseCardSerializer(serializers.ModelSerializer):
+
+
+
+# ============================= get serializers ==================================]
+
+
+class DistrictGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = District
+        fields = ['id', 'name']
+
+
+class GosAdministrationGetSerializer(serializers.ModelSerializer):
+    district = DistrictGetSerializer()
+    class Meta:
+        model = GosAdministration
+        fields = ['id', 'name', 'district']
+
+
+class SettlementGetSerializer(serializers.ModelSerializer):
+    administration = GosAdministrationGetSerializer()
+    class Meta:
+        model = Settlement
+        fields = ['id', 'name', 'administration']
+
+
+class StreetGetSerializer(serializers.ModelSerializer):
+    settlement = SettlementGetSerializer()
+    class Meta:
+        model = Street
+        fields = ['id', 'name', 'settlement']
+
+
+class AddressGetSerializer(serializers.ModelSerializer):
+    street = StreetGetSerializer()
+    class Meta:
+        model = Address
+        fields = ['house', 'liter', 'apartment', 'apartment_liter', 'street']
+
+
+class ExecutorGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Executor
+        fields = ['id', 'name']
+
+
+class CounterCauseGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CounterCause
+        fields = ['id', 'name']
+
+
+class CounterTypeGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CounterType
+        fields = ['id', 'model', 'significance', 'amperage_range', 'current_transformation_ratio']
+
+
+class CounterGetSerializer(serializers.ModelSerializer):
+    cause = CounterCauseGetSerializer()
+    executor = ExecutorGetSerializer()
+    counter_type = CounterTypeGetSerializer()
+
+    class Meta:
+        model = Counter
+        fields = [
+            'serial_number', 'pp_number', 'current_indication',
+            'year_of_state_inspection', 'quarter_of_state_inspection',
+            'energy_sales_seal', 'CRPU_seal', 'seal_on_the_casing',
+            'cause', 'executor', 'counter_type'
+        ]
+
+
+class PlotGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plot
+        fields = ['id', 'name', 'code', 'controller']
+
+
+class RouteGetSerializer(serializers.ModelSerializer):
+    plot = PlotGetSerializer()
+    executor = ExecutorGetSerializer()
+
+    class Meta:
+        model = Route
+        fields = ['id', 'route_number', 'plot', 'executor']
+
+
+class TariffGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tariff
+        fields = ['id', 'name', 'NDS', 'NSP', 'kw_cost']
+
+
+
+
+
+
+class HouseCardGetSerializer(serializers.ModelSerializer):
+    address = AddressGetSerializer()
+    plot = PlotGetSerializer()
+    route = RouteGetSerializer()
+    counter = CounterGetSerializer()
+    tariff = TariffGetSerializer()
     class Meta:
         model = HouseCard
         fields = '__all__'

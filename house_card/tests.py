@@ -16,7 +16,10 @@
     "street": 1
   },
   "user": 5,
-  "plot": 1,
+  "plot": {
+    "id": 1,
+    "name": "01"
+  },
   "route": 1,
   "counter": {
     "serial_number": "004059",

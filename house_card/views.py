@@ -40,7 +40,7 @@ from .serializers import (
     PlotSerializer,
     RouteSerializer, 
 
-    HouseCardSerializer,
+    HouseCardGetSerializer,
     HouseCardCreateSerializer,
     HouseCardDetailSerializer
 )
@@ -159,7 +159,7 @@ class RouteViewSet(viewsets.ModelViewSet):
 )
 class HouseCardGetViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = HouseCard.objects.all()
-    serializer_class = HouseCardSerializer
+    serializer_class = HouseCardGetSerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
