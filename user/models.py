@@ -66,7 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __str__(self):
-        return self.name
+        return self.email
 
     def save(self, *args, **kwargs):
         if not self.email:

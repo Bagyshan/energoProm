@@ -19,7 +19,9 @@ from .views import (
 
     HouseCardGetViewSet,
     HouseCardCreateAPIView,
-    HouseCardRetrieveUpdateDestroyAPIView
+    HouseCardRetrieveUpdateDestroyAPIView,
+
+    FieldTranslationView
 )
 
 
@@ -41,14 +43,15 @@ router.register(r'tariff', TariffViewSet)
 router.register(r'plot', PlotViewSet)
 router.register(r'route', RouteViewSet)
 
-router.register(r"", HouseCardGetViewSet)
+router.register(r"house-cards", HouseCardGetViewSet)
 
 
 
 urlpatterns = [
     path("", include(router.urls)),
     path("create", HouseCardCreateAPIView.as_view(), name='house-card-create'),
-    path('edit/<int:id>/', HouseCardRetrieveUpdateDestroyAPIView.as_view(), name='house-card-edit')
+    path('edit/<int:id>/', HouseCardRetrieveUpdateDestroyAPIView.as_view(), name='house-card-edit'),
+    path('field-translations/', FieldTranslationView.as_view(), name='field-translations'),
 ]
 # urlpatterns = [
 #     path("settlement/", SettlementViewSet.as_view(), name='settlements'),

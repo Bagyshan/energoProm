@@ -112,7 +112,6 @@ class Counter(models.Model):
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
 # Tariff models
 
 class Tariff(models.Model):
@@ -152,6 +151,7 @@ class Route(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     # house_card_count
+
 
 
 
@@ -213,3 +213,33 @@ class HouseCard(models.Model):
     # Tariff
     # Route
 
+# {
+#     "district": "район",
+#     "gos_administration": "гос. администрация",
+#     "settlement": "населенный пункт",
+#     "street": "улица",
+#     "liter": "литер",
+#     "significance": "значность",
+#     "amperage_range": "диапазон силы тока",
+#     "current_transformation_ratio": "коэффициент трансформации тока",
+#     "executor": "исполнитель",
+#     "counter_cause": "причина",
+#     "counter_type": "тип счетчика",
+#     "counter": "счетчик",
+#     "current_indication": "текущий показатель",
+#     "year_of_state_inspection": "код гос. проверки",
+#     "quarter_of_state_inspection": "квартал гос. проверки",
+#     "energy_sales_seal": "промба энергосбыта",
+#     "CRPU_seal": "пломба ЦРПУ",
+#     "seal_on_the_casing": "пломба на кожухе",
+#     "plot": "участок",
+#     "route": "маршрут",
+#     "personal_account": "лицевой счет",
+#     "contract_number": "номер договора",
+#     "contract_date": "дата заключения договора",
+#     "household_needs": "хозяйственные нужды",
+#     "fact_summer": "факт (лето)",
+#     "fact_winter": "факт (зима)",
+#     "max_summer": "макс (лето)",
+#     "max_winter": "макс (зима)"
+# }
