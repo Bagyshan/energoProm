@@ -67,6 +67,7 @@ services:
       - backend
       - redis
       - celery
+      - migration
     networks:
       - backend
 
