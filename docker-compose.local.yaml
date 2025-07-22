@@ -57,6 +57,30 @@ services:
     networks:
       - backend
 
+  celery-beat:
+    build: ./
+    restart: always
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./:/usr/src/app/
+    depends_on:
+      - backend
+      - redis
+      - celery
+    networks:
+      - backend
+
+  flower:
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery
+    networks:
+      - backend
 
   redis:
     image: redis

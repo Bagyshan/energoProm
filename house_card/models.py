@@ -205,6 +205,9 @@ class HouseCard(models.Model):
     max_summer = models.FloatField(null=True, blank=True)
     max_winter = models.FloatField(null=True, blank=True)
 
+    overpayment_underpayment = models.FloatField(default=0)
+    penalty = models.FloatField(default=0)
+
 
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

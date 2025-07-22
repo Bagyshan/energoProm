@@ -51,6 +51,7 @@ urlpatterns = [
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/house-card/', include('house_card.urls')),
     path('api/users/', include('user.urls')),
+    path('api/check/', include('check.urls')),
 
 
     path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

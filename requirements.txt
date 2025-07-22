@@ -21,17 +21,21 @@ click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
 constantly==23.10.4
+cron-descriptor==1.4.5
 cryptography==44.0.2
 daphne==4.1.2
 Django==5.2
+django-celery-beat==2.8.1
 django-cors-headers==4.7.0
 django-filter==25.1
 django-jazzmin==3.0.1
 django-modeltranslation==0.19.13
 django-phonenumber-field==8.0.0
 django-redis==5.4.0
+django-timezone-field==7.1
 djangorestframework==3.16.0
 djangorestframework_simplejwt==5.5.0
+dotenv==0.9.9
 drf-spectacular==0.28.0
 drf-spectacular-sidecar==2025.4.1
 drf-yasg==1.21.10
@@ -74,6 +78,7 @@ pyfcm==2.0.8
 PyJWT==2.9.0
 pyOpenSSL==25.0.0
 pyparsing==3.2.3
+python-crontab==3.3.0
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 python-dotenv==1.1.0
@@ -98,4 +103,3 @@ vine==5.1.0
 wcwidth==0.2.13
 yarl==1.20.0
 zope.interface==7.2
-dotenv

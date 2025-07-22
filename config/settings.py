@@ -15,6 +15,7 @@ import os
 from datetime import timedelta
 from dotenv import load_dotenv
 from decouple import config
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,8 +31,6 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-# ALLOWED_HOSTS = []
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(' ')
 
@@ -59,6 +58,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'channels',
+    'django_celery_beat',
 
     # apps
     'user',
@@ -179,7 +179,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 
+CELERY_BEAT_SCHEDULE = {
+    'create-monthly-checks-every-25th': {
+        'task': 'check.tasks.create_monthly_checks',
+        'schedule': crontab(minute=0, hour=0, day_of_month='25'),
+        # 'schedule': timedelta(minutes=1)
+    },
+}
 
 
 EMAIL_HOST = os.getenv('EMAIL_HOST')
