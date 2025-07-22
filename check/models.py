@@ -8,7 +8,8 @@ class Check(models.Model):
     house_card = models.ForeignKey(
         HouseCard,
         on_delete=models.CASCADE,
-        related_name='checks'
+        related_name='checks',
+        default=0
     )
     username = models.ForeignKey(
         User,
