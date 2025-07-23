@@ -230,7 +230,7 @@ class HouseCardCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseCard
         fields = [
-            'personal_account', 'contract_number', 'contract_date',
+            'house_card', 'contract_number', 'contract_date',
             'tp_number', 'household_needs', 'fact_summer', 'fact_winter',
             'max_summer', 'max_winter', 'address', 'user', 'plot',
             'route', 'counter', 'tariff'
@@ -260,7 +260,7 @@ class HouseCardDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseCard
         fields = [
-            'id', 'personal_account', 'contract_number', 'contract_date',
+            'id', 'house_card', 'contract_number', 'contract_date',
             'tp_number', 'household_needs', 'fact_summer', 'fact_winter',
             'max_summer', 'max_winter', 'address', 'user', 'plot',
             'route', 'counter', 'tariff', 'registered_at', 'updated_at'

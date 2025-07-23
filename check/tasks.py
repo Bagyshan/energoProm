@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 @app.task(bind=True, max_retries=3)
 def create_monthly_checks(self):
     today = timezone.localdate()
-    # if today.day != 25:
-    #     return 'Not the 25th day of the month'
+    if today.day <= 25 and today.day >= 28:
+        return 'Not the 25th day of the month'
     
 
     current_month = today.replace(day=1)

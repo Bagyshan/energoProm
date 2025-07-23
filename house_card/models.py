@@ -158,7 +158,7 @@ class Route(models.Model):
 # House Card model
 
 class HouseCard(models.Model):
-    personal_account = models.PositiveIntegerField()
+    house_card = models.PositiveIntegerField(default=0)
     address = models.ForeignKey(
         Address,
         on_delete=models.SET_NULL,
