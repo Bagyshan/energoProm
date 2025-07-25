@@ -20,6 +20,7 @@ from .views import (
     HouseCardGetViewSet,
     HouseCardCreateAPIView,
     HouseCardRetrieveUpdateDestroyAPIView,
+    UserHouseCardListAPIView,
 
     FieldTranslationView
 )
@@ -51,7 +52,8 @@ urlpatterns = [
     path("", include(router.urls)),
     path("create", HouseCardCreateAPIView.as_view(), name='house-card-create'),
     path('edit/<int:id>/', HouseCardRetrieveUpdateDestroyAPIView.as_view(), name='house-card-edit'),
-    path('field-translations/', FieldTranslationView.as_view(), name='field-translations'),
+    path('house-card-translations/', FieldTranslationView.as_view(), name='house-card-translations'),
+    path('house-card-user-list/', UserHouseCardListAPIView.as_view(), name='house-card-user-list'),
 ]
 # urlpatterns = [
 #     path("settlement/", SettlementViewSet.as_view(), name='settlements'),

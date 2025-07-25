@@ -83,3 +83,59 @@ class CheckSerializer(serializers.ModelSerializer):
             'updated_at',
         )
 
+
+
+
+
+
+
+# ================== grafic serializer =====================
+
+from rest_framework import serializers
+from .models import Check
+import calendar
+import locale
+
+# Установим русскую локаль для правильного отображения месяца
+try:
+    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+except locale.Error:
+    # Fallback, если система не поддерживает ru_RU.UTF-8
+    locale.setlocale(locale.LC_TIME, '')
+
+class GraphicCheckSerializer(serializers.ModelSerializer):
+    month_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Check
+        fields = ['created_at', 'consumption', 'current_check_date', 'month_name']
+
+    def get_month_name(self, obj):
+        month = obj.created_at.strftime('%B') 
+
+        if (month.lower() == 'january'):
+            return 'Январь'
+        elif (month.lower() == 'february'):
+            return 'Февраль'
+        elif (month.lower() == 'march'):
+            return 'Март'
+        elif (month.lower() == 'april'):
+            return 'Апрель'
+        elif (month.lower() == 'may'):
+            return 'Май'
+        elif (month.lower() == 'june'):
+            return 'Июнь'
+        elif (month.lower() == 'july'):
+            return 'Июль'
+        elif (month.lower() == 'august'):
+            return 'Август'
+        elif (month.lower() == 'september'):
+            return 'Сентябрь'
+        elif (month.lower() == 'october'):
+            return 'Октябрь'
+        elif (month.lower() == 'november'):
+            return 'Ноябрь'
+        elif (month.lower() == 'december'):
+            return 'Декабрь'
+        else:
+            return '??????'

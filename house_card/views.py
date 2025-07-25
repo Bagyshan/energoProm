@@ -43,7 +43,8 @@ from .serializers import (
 
     HouseCardGetSerializer,
     HouseCardCreateSerializer,
-    HouseCardDetailSerializer
+    HouseCardDetailSerializer,
+    HouseCardUserListSerializer
 )
 
 @extend_schema(
@@ -52,7 +53,7 @@ from .serializers import (
 class DistrictViewSet(viewsets.ModelViewSet):
     queryset = District.objects.all()
     serializer_class = DistrictSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 @extend_schema(
     tags=['Address API\'s']
@@ -60,7 +61,7 @@ class DistrictViewSet(viewsets.ModelViewSet):
 class GosAdministrationViewSet(viewsets.ModelViewSet):
     queryset = GosAdministration.objects.all()
     serializer_class = GosAdministrationSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 @extend_schema(
     tags=['Address API\'s']
@@ -68,7 +69,7 @@ class GosAdministrationViewSet(viewsets.ModelViewSet):
 class SettlementViewSet(viewsets.ModelViewSet):
     queryset = Settlement.objects.all()
     serializer_class = SettlementSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 @extend_schema(
     tags=['Address API\'s']
@@ -76,7 +77,7 @@ class SettlementViewSet(viewsets.ModelViewSet):
 class StreetViewSet(viewsets.ModelViewSet):
     queryset = Street.objects.all()
     serializer_class = StreetSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 @extend_schema(
     tags=['Address API\'s']
@@ -84,7 +85,7 @@ class StreetViewSet(viewsets.ModelViewSet):
 class AddressViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 
 
@@ -94,7 +95,7 @@ class AddressViewSet(viewsets.ReadOnlyModelViewSet):
 class ExecutorViewSet(viewsets.ModelViewSet):
     queryset = Executor.objects.all()
     serializer_class = ExecutorSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 
 
@@ -104,7 +105,7 @@ class ExecutorViewSet(viewsets.ModelViewSet):
 class CounterCauseViewSet(viewsets.ModelViewSet):
     queryset = CounterCause.objects.all()
     serializer_class = CounterCauseSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 @extend_schema(
     tags=['Counter API\'s']
@@ -112,7 +113,7 @@ class CounterCauseViewSet(viewsets.ModelViewSet):
 class CounterTypeViewSet(viewsets.ModelViewSet):
     queryset = CounterType.objects.all()
     serializer_class = CounterTypeSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 @extend_schema(
     tags=['Counter API\'s']
@@ -120,7 +121,7 @@ class CounterTypeViewSet(viewsets.ModelViewSet):
 class CounterViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Counter.objects.all()
     serializer_class = CounterSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 
 
@@ -131,7 +132,7 @@ class CounterViewSet(viewsets.ReadOnlyModelViewSet):
 class TariffViewSet(viewsets.ModelViewSet):
     queryset = Tariff.objects.all()
     serializer_class = TariffSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 
 
@@ -142,7 +143,7 @@ class TariffViewSet(viewsets.ModelViewSet):
 class PlotViewSet(viewsets.ModelViewSet):
     queryset = Plot.objects.all()
     serializer_class = PlotSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 @extend_schema(
     tags=['Plot API\'s']
@@ -150,7 +151,7 @@ class PlotViewSet(viewsets.ModelViewSet):
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 
 
@@ -199,6 +200,19 @@ class HouseCardRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVie
 
 
 @extend_schema(
+    tags=['House Card User List']
+)
+class UserHouseCardListAPIView(generics.ListAPIView):
+    serializer_class = HouseCardUserListSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return HouseCard.objects.filter(user=self.request.user)
+
+
+
+
+@extend_schema(
     tags=['Row Translation']
 )
 class FieldTranslationView(views.APIView):
@@ -236,3 +250,8 @@ class FieldTranslationView(views.APIView):
             "max_winter": "макс (зима)"
         }
         return Response(translations)
+    
+
+
+
+

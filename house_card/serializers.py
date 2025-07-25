@@ -281,3 +281,49 @@ class HouseCardDetailSerializer(serializers.ModelSerializer):
             counter_serializer.save()
 
         return super().update(instance, validated_data)
+    
+
+
+
+
+
+
+
+
+#========================================= User List Serializers ===============================================
+
+
+# serializers.py
+from rest_framework import serializers
+from .models import HouseCard, Address, Street, Tariff
+
+class StreetUserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Street
+        fields = ['name']
+
+class AddressUserListSerializer(serializers.ModelSerializer):
+    street = StreetUserListSerializer()
+    
+    class Meta:
+        model = Address
+        fields = ['street', 'house', 'liter', 'apartment', 'apartment_liter']
+
+class TariffUserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tariff
+        fields = ['kw_cost']
+
+class HouseCardUserListSerializer(serializers.ModelSerializer):
+    address = AddressUserListSerializer()
+    tariff = TariffUserListSerializer()
+    
+    class Meta:
+        model = HouseCard
+        fields = [
+            'id',
+            'house_card',
+            'address',
+            'tariff',
+            'contract_date'
+        ]

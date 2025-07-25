@@ -29,6 +29,7 @@ class Check(models.Model):
     current_check = models.PositiveIntegerField(null=True, blank=True)
     current_check_date = models.DateField(null=True, blank=True)
     period_day_count = models.PositiveSmallIntegerField(default=0)
+    pay_for_electricity = models.PositiveIntegerField(default=0, null=True, blank=True)
     total_sum = models.FloatField(null=True, blank=True)
     
     counter_photo = models.ImageField(upload_to='counter_photo/', null=True)
