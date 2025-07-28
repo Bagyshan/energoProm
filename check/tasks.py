@@ -3,6 +3,7 @@ from django.utils import timezone
 from calendar import monthrange
 from .models import Check, HouseCard
 from config.celery import app
+from notification.tasks import send_expo_push_notification
 
 def get_days_in_month(dt):
     return monthrange(dt.year, dt.month)[1]
@@ -47,8 +48,16 @@ def create_monthly_checks(self):
                     period_day_count=get_days_in_month(today)
                 )
                 success += 1
+
+
+                send_expo_push_notification.delay(
+                    user_id=house_card.user.pk,
+                    title="Новый счет за электричество",
+                    body=f"Добавлен новый ежемесячный счет на электричество за {today.strftime('%B %Y')}",
+                    data={"type": "check_created", "house_card_id": house_card.pk}
+                )
         except Exception as e:
-            logger.error(f"Failed to create check for HouseCard ID {house_card.id}: {e}")
+            logger.error(f"Failed to create check for HouseCard ID {house_card.pk}: {e}")
             failed += 1
             continue
 

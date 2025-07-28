@@ -63,7 +63,8 @@ INSTALLED_APPS = [
     # apps
     'user',
     'house_card',
-    'check'
+    'check',
+    'notification'
 ]
 
 MIDDLEWARE = [
