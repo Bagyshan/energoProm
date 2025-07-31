@@ -139,3 +139,58 @@ class GraphicCheckSerializer(serializers.ModelSerializer):
             return 'Декабрь'
         else:
             return '??????'
+        
+
+
+
+
+
+
+
+
+# ============================ Photo update serializer =========================
+
+class PhotoUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Check
+        fields = ['id', 'counter_photo', 'counter_current_check']
+        read_only_fields = ['id']
+
+class CheckVerificationUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Check
+        fields = ['counter_current_check']
+
+    def update(self, instance, validated_data):
+        instance.counter_current_check = validated_data.get('counter_current_check', instance.counter_current_check)
+        instance.verified = True  # Принудительно подтверждаем
+        instance.save()
+        return instance
+
+
+
+class HouseCardShortUnverifiedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HouseCard
+        fields = ['id', 'house_card']
+
+class UserShortUnverifiedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'name']
+
+class CheckShortListUnverifiedSerializer(serializers.ModelSerializer):
+    house_card = HouseCardShortUnverifiedSerializer()
+    username = UserShortUnverifiedSerializer()
+
+    class Meta:
+        model = Check
+        fields = ['id', 'house_card', 'username', 'created_at']
+
+class CheckRetrieveUnverifiedSerializer(serializers.ModelSerializer):
+    house_card = HouseCardShortUnverifiedSerializer()
+    username = UserShortUnverifiedSerializer()
+
+    class Meta:
+        model = Check
+        fields = ['id', 'house_card', 'username', 'counter_photo', 'counter_current_check', 'created_at']

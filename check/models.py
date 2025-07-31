@@ -27,7 +27,7 @@ class Check(models.Model):
     previous_check = models.PositiveIntegerField(default=0)
     previous_check_date = models.DateField(default='2025-01-01')
     current_check = models.PositiveIntegerField(null=True, blank=True)
-    current_check_date = models.DateField(null=True, blank=True)
+    current_check_date = models.DateField(auto_now=True, null=True, blank=True)
     period_day_count = models.PositiveSmallIntegerField(default=0)
     NDS_total = models.FloatField(default=0, null=True, blank=True)
     NSP_total = models.FloatField(default=0, null=True, blank=True)
@@ -36,6 +36,7 @@ class Check(models.Model):
     
     counter_photo = models.ImageField(upload_to='counter_photo/', null=True)
     counter_current_check = models.PositiveIntegerField(null=True)
+    verified = models.BooleanField(default=False, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

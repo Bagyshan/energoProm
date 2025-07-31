@@ -1,7 +1,7 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, views, generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Check
-from .serializers import CheckSerializer
+from .serializers import CheckSerializer, PhotoUpdateSerializer, CheckVerificationUpdateSerializer, CheckShortListUnverifiedSerializer, CheckRetrieveUnverifiedSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -11,6 +11,7 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class CheckViewSet(viewsets.ModelViewSet):
     queryset = Check.objects.all()
@@ -115,6 +116,101 @@ class GraphicCheckListViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 
+# views.py (добавить аннотацию)
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+@extend_schema(
+    tags=['User Send Counter Photo']
+)
+class PhotoUpdateAPIView(generics.UpdateAPIView):
+    queryset = Check.objects.all()
+    serializer_class = PhotoUpdateSerializer
+    parser_classes = [MultiPartParser, FormParser]
+    http_method_names = ['patch']
+
+    def get_object(self):
+        return Check.objects.get(id=self.kwargs['pk'])
+
+    @swagger_auto_schema(
+        operation_description="Обновление фото счетчика и показаний",
+        manual_parameters=[],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'counter_photo': openapi.Schema(
+                    type=openapi.TYPE_FILE,
+                    format=openapi.TYPE_FILE,  # 💥 ВАЖНО: именно формат binary — это файл
+                    description='Фото счетчика'
+                ),
+                'counter_current_check': openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description='Текущее показание'
+                ),
+            },
+            required=['counter_photo', 'counter_current_check']
+        ),
+        consumes=['multipart/form-data'],  # 💥 ВАЖНО: явно указываем, что используем multipart
+        responses={200: PhotoUpdateSerializer()}
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+
+# views.py
+
+from rest_framework import generics, status
+from rest_framework.response import Response
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework import serializers
+
+from .models import Check
+from .serializers import CheckVerificationUpdateSerializer
+
+
+@extend_schema(
+    tags=['Admin Verified Photo']
+)
+class CheckVerificationUpdateAPIView(generics.UpdateAPIView):
+    queryset = Check.objects.all()
+    serializer_class = CheckVerificationUpdateSerializer
+    http_method_names = ['patch']
+
+    @swagger_auto_schema(
+        operation_description="Обновить текущее показание и флаг подтверждения",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'counter_current_check': openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description='Текущее показание'
+                ),
+                'verified': openapi.Schema(
+                    type=openapi.TYPE_BOOLEAN, description='Подтверждено ли'
+                ),
+            },
+            required=['counter_current_check', 'verified'],
+        ),
+        responses={200: CheckVerificationUpdateSerializer()}
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+@extend_schema(
+    tags=['Admin Verified Photo']
+)
+class CheckGetListUnverifiedAPIView(generics.ListAPIView):
+    queryset = Check.objects.filter(verified=False).order_by('-created_at')
+    serializer_class = CheckShortListUnverifiedSerializer
+@extend_schema(
+    tags=['Admin Verified Photo']
+)
+class CheckGetRetrieveUnverifiedAPIView(generics.RetrieveAPIView):
+    queryset = Check.objects.all()
+    serializer_class = CheckRetrieveUnverifiedSerializer
+
+
+
 
 
 
@@ -138,4 +234,5 @@ class CheckTranslationView(APIView):
         }
         return Response(translations)
     
+
 

@@ -38,6 +38,7 @@ def validate_kg_phone(value):
 
 class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(_('Имя'), max_length=150, blank=True)
+    INN = models.PositiveBigIntegerField(_('ИНН'), blank=True, null=True)
     email = models.EmailField(
         _('Email'),
         unique=True,
