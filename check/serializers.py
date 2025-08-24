@@ -97,13 +97,60 @@ import calendar
 import locale
 
 # Установим русскую локаль для правильного отображения месяца
-try:
-    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
-except locale.Error:
-    # Fallback, если система не поддерживает ru_RU.UTF-8
-    locale.setlocale(locale.LC_TIME, '')
+# try:
+#     locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+# except locale.Error:
+#     # Fallback, если система не поддерживает ru_RU.UTF-8
+#     locale.setlocale(locale.LC_TIME, '')
 
-class GraphicCheckSerializer(serializers.ModelSerializer):
+# class GraphicCheckSerializer(serializers.ModelSerializer):
+#     month_name = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Check
+#         fields = ['created_at', 'consumption', 'current_check_date', 'month_name']
+
+#     def get_month_name(self, obj):
+#         month = obj.created_at.strftime('%B') 
+
+#         if (month.lower() == 'january'):
+#             return 'Январь'
+#         elif (month.lower() == 'february'):
+#             return 'Февраль'
+#         elif (month.lower() == 'march'):
+#             return 'Март'
+#         elif (month.lower() == 'april'):
+#             return 'Апрель'
+#         elif (month.lower() == 'may'):
+#             return 'Май'
+#         elif (month.lower() == 'june'):
+#             return 'Июнь'
+#         elif (month.lower() == 'july'):
+#             return 'Июль'
+#         elif (month.lower() == 'august'):
+#             return 'Август'
+#         elif (month.lower() == 'september'):
+#             return 'Сентябрь'
+#         elif (month.lower() == 'october'):
+#             return 'Октябрь'
+#         elif (month.lower() == 'november'):
+#             return 'Ноябрь'
+#         elif (month.lower() == 'december'):
+#             return 'Декабрь'
+#         else:
+#             return '??????'
+        
+from rest_framework import serializers
+from .models import Check
+
+MONTH_NAMES = {
+    1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
+    5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+    9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
+}
+
+
+class GraphicCheckItemSerializer(serializers.ModelSerializer):
     month_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -111,35 +158,10 @@ class GraphicCheckSerializer(serializers.ModelSerializer):
         fields = ['created_at', 'consumption', 'current_check_date', 'month_name']
 
     def get_month_name(self, obj):
-        month = obj.created_at.strftime('%B') 
-
-        if (month.lower() == 'january'):
-            return 'Январь'
-        elif (month.lower() == 'february'):
-            return 'Февраль'
-        elif (month.lower() == 'march'):
-            return 'Март'
-        elif (month.lower() == 'april'):
-            return 'Апрель'
-        elif (month.lower() == 'may'):
-            return 'Май'
-        elif (month.lower() == 'june'):
-            return 'Июнь'
-        elif (month.lower() == 'july'):
-            return 'Июль'
-        elif (month.lower() == 'august'):
-            return 'Август'
-        elif (month.lower() == 'september'):
-            return 'Сентябрь'
-        elif (month.lower() == 'october'):
-            return 'Октябрь'
-        elif (month.lower() == 'november'):
-            return 'Ноябрь'
-        elif (month.lower() == 'december'):
-            return 'Декабрь'
-        else:
-            return '??????'
-        
+        m = getattr(obj, 'created_at', None)
+        if not m:
+            return ''
+        return MONTH_NAMES.get(m.month, '')
 
 
 
@@ -163,6 +185,8 @@ class CheckVerificationUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.counter_current_check = validated_data.get('counter_current_check', instance.counter_current_check)
+        instance.current_check = validated_data.get('counter_current_check', instance.counter_current_check)
+        instance.consumption = validated_data.get('counter_current_check', instance.counter_current_check) - validated_data.get('previous_check', instance.previous_check)
         instance.verified = True  # Принудительно подтверждаем
         instance.save()
         return instance

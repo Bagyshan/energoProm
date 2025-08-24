@@ -34,8 +34,8 @@ class Check(models.Model):
     pay_for_electricity = models.FloatField(default=0, null=True, blank=True)
     total_sum = models.FloatField(null=True, blank=True)
     
-    counter_photo = models.ImageField(upload_to='counter_photo/', null=True)
-    counter_current_check = models.PositiveIntegerField(null=True)
+    counter_photo = models.ImageField(upload_to='counter_photo/', null=True, blank=True)
+    counter_current_check = models.PositiveIntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
