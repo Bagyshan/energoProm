@@ -53,6 +53,7 @@ urlpatterns = [
     path('api/users/', include('user.urls')),
     path('api/check/', include('check.urls')),
     path('api/notification/', include('notification.urls')),
+    path('api/bid/', include('bid.urls')),
 
 
     path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
