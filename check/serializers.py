@@ -164,6 +164,12 @@ class GraphicCheckItemSerializer(serializers.ModelSerializer):
         return MONTH_NAMES.get(m.month, '')
 
 
+class GraphicCheckAggregatedSerializer(serializers.Serializer):
+    average_consumption = serializers.FloatField()
+    diff_amount = serializers.FloatField(allow_null=True)
+    diff_percent = serializers.FloatField(allow_null=True)
+    graphic_evaluate = GraphicCheckItemSerializer(many=True) 
+
 
 
 

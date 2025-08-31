@@ -88,14 +88,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework import serializers
 from django.db.models import Avg
 
 from .models import Check
 from .serializers import GraphicCheckItemSerializer
 
-@extend_schema(
-    tags=['Graphic Check']
-)
+class CounterQuerySerializer(serializers.Serializer):
+    house_card = serializers.IntegerField(required=True)
+
 # class GraphicCheckListViewSet(viewsets.ReadOnlyModelViewSet):
 #     queryset = Check.objects.all()
 #     permission_classes = [IsAuthenticated]
@@ -128,7 +129,139 @@ from .serializers import GraphicCheckItemSerializer
 #     filterset_fields = {'house_card': ['exact']}
 
 
-class GraphicCheckListViewSet(viewsets.ReadOnlyModelViewSet):
+# class GraphicCheckListViewSet(viewsets.ReadOnlyModelViewSet):
+#     """
+#     Возвращает агрегированные данные по house_card:
+#     - average_consumption
+#     - diff_amount (текущий - предыдущий)
+#     - diff_percent (в % относительно предыдущего)
+#     - graphic_evaluate: список чеков (chronological order)
+#     """
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = GraphicCheckItemSerializer
+#     queryset = Check.objects.all().order_by('created_at')  # базовый порядок: возрастание
+
+#     # @swagger_auto_schema(
+#     #     method='get', 
+#     #     manual_parameters=[
+#     #         openapi.Parameter(
+#     #             name='house_card',
+#     #             in_=openapi.IN_QUERY,
+#     #             description='ID лицевого счета (HouseCard ID)',
+#     #             type=openapi.TYPE_INTEGER,
+#     #             required=True,
+#     #         ),
+#     #     ],
+#     #     responses={200: openapi.Response(
+#     #         description='Агрегированные данные и список чеков',
+#     #         schema=openapi.Schema(
+#     #             type=openapi.TYPE_OBJECT,
+#     #             properties={
+#     #                 'average_consumption': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+#     #                 'diff_amount': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', nullable=True),
+#     #                 'diff_percent': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', nullable=True),
+#     #                 'graphic_evaluate': openapi.Schema(
+#     #                     type=openapi.TYPE_ARRAY,
+#     #                     items=openapi.Schema(
+#     #                         type=openapi.TYPE_OBJECT,
+#     #                         properties={
+#     #                             'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+#     #                             'consumption': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', nullable=True),
+#     #                             'current_check_date': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+#     #                             'month_name': openapi.Schema(type=openapi.TYPE_STRING),
+#     #                         }
+#     #                     )
+#     #                 )
+#     #             }
+#     #         )
+#     #     )}
+#     # )
+#     @swagger_auto_schema(
+#         operation_description="Список счетчиков по HouseCard",
+#         query_serializer=CounterQuerySerializer,
+#         responses={200: openapi.Response(description="OK")}
+#     )
+#     def list(self, request, *args, **kwargs):
+#         serializer = CounterQuerySerializer(data=request.query_params)
+#         serializer.is_valid(raise_exception=True)
+#         house_card = serializer.validated_data["house_card"]
+#         # house_card = request.query_params.get('house_card')
+#         if not house_card:
+#             raise ValidationError({'house_card': 'Query-параметр house_card обязателен'})
+
+#         # Получаем все чеки для house_card в хронологическом порядке (возрастание created_at)
+#         checks_qs = (Check.objects
+#                      .filter(house_card_id=house_card)
+#                      .order_by('created_at')
+#                      .only('id', 'created_at', 'consumption', 'current_check_date'))
+
+#         # Если нет чеков — вернуть пустую структуру
+#         if not checks_qs.exists():
+#             result = {
+#                 'average_consumption': 0.0,
+#                 'diff_amount': None,
+#                 'diff_percent': None,
+#                 'graphic_evaluate': []
+#             }
+#             return Response(result, status=status.HTTP_200_OK)
+
+#         # Агрегат: среднее потребление по всем чекaм (один запрос)
+#         avg_data = Check.objects.filter(house_card_id=house_card).aggregate(avg=Avg('consumption'))
+#         avg_val = avg_data.get('avg') or 0.0
+#         try:
+#             avg_val = round(float(avg_val), 3)
+#         except (TypeError, ValueError):
+#             avg_val = 0.0
+
+#         # Находим последний (текущий) и предыдущий чек (последние по created_at)
+#         # Поскольку у нас qs упорядочен по возрастанию, последний — последний элемент
+#         # Чтобы не делать второй запрос — преобразуем qs в список (ориентировано на размеры per house_card)
+#         checks_list = list(checks_qs)  # 1 запрос для получения всех чеков
+#         last_check = checks_list[-1]
+#         prev_check = checks_list[-2] if len(checks_list) >= 2 else None
+
+#         # Вычисляем diff_amount и diff_percent (без деления на 0)
+#         diff_amount = None
+#         diff_percent = None
+#         if prev_check and prev_check.consumption is not None and last_check.consumption is not None:
+#             try:
+#                 diff_amount_val = float(last_check.consumption) - float(prev_check.consumption)
+#                 diff_amount = round(diff_amount_val, 3)
+#                 if float(prev_check.consumption) != 0.0:
+#                     diff_percent_val = (diff_amount_val / float(prev_check.consumption)) * 100.0
+#                     diff_percent = round(diff_percent_val, 3)
+#                 else:
+#                     diff_percent = None
+#             except (TypeError, ValueError, ZeroDivisionError):
+#                 diff_amount = None
+#                 diff_percent = None
+
+#         # Сериализуем список чеков в хронологическом порядке (как требуется)
+#         serializer = self.get_serializer(checks_list, many=True)
+#         graphic_data = serializer.data
+
+#         result = {
+#             'average_consumption': avg_val,
+#             'diff_amount': diff_amount,
+#             'diff_percent': diff_percent,
+#             'graphic_evaluate': graphic_data
+#         }
+#         return Response(result, status=status.HTTP_200_OK)
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
+from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from django.db.models import Avg
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+from .serializers import GraphicCheckAggregatedSerializer
+
+@extend_schema(
+    tags=['Graphic Check']
+)
+class GraphicCheckListAPIView(GenericAPIView):
     """
     Возвращает агрегированные данные по house_card:
     - average_consumption
@@ -138,81 +271,55 @@ class GraphicCheckListViewSet(viewsets.ReadOnlyModelViewSet):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = GraphicCheckItemSerializer
-    queryset = Check.objects.all().order_by('created_at')  # базовый порядок: возрастание
+    queryset = Check.objects.all().order_by('created_at')
 
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
                 name='house_card',
-                in_=openapi.IN_QUERY,
-                description='ID лицевого счета (HouseCard ID)',
-                type=openapi.TYPE_INTEGER,
+                type=OpenApiTypes.INT64,
+                location=OpenApiParameter.QUERY,
                 required=True,
+                description='ID лицевого счета (HouseCard ID)',
             ),
         ],
-        responses={200: openapi.Response(
-            description='Агрегированные данные и список чеков',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'average_consumption': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
-                    'diff_amount': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', nullable=True),
-                    'diff_percent': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', nullable=True),
-                    'graphic_evaluate': openapi.Schema(
-                        type=openapi.TYPE_ARRAY,
-                        items=openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            properties={
-                                'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
-                                'consumption': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', nullable=True),
-                                'current_check_date': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
-                                'month_name': openapi.Schema(type=openapi.TYPE_STRING),
-                            }
-                        )
-                    )
-                }
-            )
-        )}
+        responses=GraphicCheckAggregatedSerializer,
+        description="Агрегированные данные по HouseCard + точки для графика",
     )
-    def list(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         house_card = request.query_params.get('house_card')
         if not house_card:
             raise ValidationError({'house_card': 'Query-параметр house_card обязателен'})
 
-        # Получаем все чеки для house_card в хронологическом порядке (возрастание created_at)
-        checks_qs = (Check.objects
-                     .filter(house_card_id=house_card)
-                     .order_by('created_at')
-                     .only('id', 'created_at', 'consumption', 'current_check_date'))
+        # Получаем все чеки для house_card в хронологическом порядке
+        checks_qs = (
+            Check.objects
+            .filter(house_card_id=house_card)
+            .order_by('created_at')
+            .only('id', 'created_at', 'consumption', 'current_check_date')
+        )
 
-        # Если нет чеков — вернуть пустую структуру
         if not checks_qs.exists():
-            result = {
+            return Response({
                 'average_consumption': 0.0,
                 'diff_amount': None,
                 'diff_percent': None,
                 'graphic_evaluate': []
-            }
-            return Response(result, status=status.HTTP_200_OK)
+            }, status=status.HTTP_200_OK)
 
-        # Агрегат: среднее потребление по всем чекaм (один запрос)
-        avg_data = Check.objects.filter(house_card_id=house_card).aggregate(avg=Avg('consumption'))
-        avg_val = avg_data.get('avg') or 0.0
+        # Среднее потребление
+        avg_val = Check.objects.filter(house_card_id=house_card).aggregate(avg=Avg('consumption')).get('avg') or 0.0
         try:
             avg_val = round(float(avg_val), 3)
         except (TypeError, ValueError):
             avg_val = 0.0
 
-        # Находим последний (текущий) и предыдущий чек (последние по created_at)
-        # Поскольку у нас qs упорядочен по возрастанию, последний — последний элемент
-        # Чтобы не делать второй запрос — преобразуем qs в список (ориентировано на размеры per house_card)
-        checks_list = list(checks_qs)  # 1 запрос для получения всех чеков
+        # Последний и предыдущий чек
+        checks_list = list(checks_qs)
         last_check = checks_list[-1]
         prev_check = checks_list[-2] if len(checks_list) >= 2 else None
 
-        # Вычисляем diff_amount и diff_percent (без деления на 0)
-        diff_amount = None
-        diff_percent = None
+        diff_amount, diff_percent = None, None
         if prev_check and prev_check.consumption is not None and last_check.consumption is not None:
             try:
                 diff_amount_val = float(last_check.consumption) - float(prev_check.consumption)
@@ -220,24 +327,18 @@ class GraphicCheckListViewSet(viewsets.ReadOnlyModelViewSet):
                 if float(prev_check.consumption) != 0.0:
                     diff_percent_val = (diff_amount_val / float(prev_check.consumption)) * 100.0
                     diff_percent = round(diff_percent_val, 3)
-                else:
-                    diff_percent = None
             except (TypeError, ValueError, ZeroDivisionError):
-                diff_amount = None
-                diff_percent = None
+                pass
 
-        # Сериализуем список чеков в хронологическом порядке (как требуется)
+        # Сериализация
         serializer = self.get_serializer(checks_list, many=True)
-        graphic_data = serializer.data
-
         result = {
             'average_consumption': avg_val,
             'diff_amount': diff_amount,
             'diff_percent': diff_percent,
-            'graphic_evaluate': graphic_data
+            'graphic_evaluate': serializer.data
         }
         return Response(result, status=status.HTTP_200_OK)
-
 
 
 
