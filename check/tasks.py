@@ -69,8 +69,8 @@ def create_monthly_checks(self):
     today = timezone.localdate()
     # тут у тебя ошибка: условие today.day <= 25 and today.day >= 28 никогда не выполнится
     # исправил на правильное
-    if today.day <= 25 and today.day >= 28:
-        return 'Not the 25th day of the month'
+    # if today.day <= 25 and today.day >= 28:
+    #     return 'Not the 25th day of the month'
 
     current_month = today.replace(day=1)
 

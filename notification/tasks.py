@@ -131,33 +131,54 @@ def send_expo_push_notification(user_id, title, body, data=None):
         logger.exception(f"Unhandled error while sending to user {user_id}: {str(exc)}")
 
 
-@shared_task
+from celery import shared_task
+from exponent_server_sdk import PushClient, PushServerError
+from requests.exceptions import RequestException
+from .models import PushNotificationLog
+import logging
+from config.celery import app
+
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task()
 def check_expo_receipts():
+    pending_logs = PushNotificationLog.objects.filter(
+        status="sent", ticket_id__isnull=False
+    )
+
+    if not pending_logs.exists():
+        logger.info("No pending receipts to check")
+        return "No pending receipts"
+
     client = PushClient()
-    logs = PushNotificationLog.objects.filter(status="sent", ticket_id__isnull=False)
-
-    ticket_ids = [log.ticket_id for log in logs]
-    if not ticket_ids:
-        return
-
-    logger.info(f"Checking receipts for {len(ticket_ids)} tickets")
+    ticket_ids = [log.ticket_id for log in pending_logs]
 
     try:
         receipts = client.get_receipts(ticket_ids)
 
         for ticket_id, receipt in receipts.items():
-            log = PushNotificationLog.objects.filter(ticket_id=ticket_id).first()
+            log = pending_logs.filter(ticket_id=ticket_id).first()
             if not log:
                 continue
 
-            if receipt["status"] == "ok":
+            if receipt.get("status") == "ok":
                 log.status = "delivered"
                 log.save()
-                logger.info(f"Push delivered successfully for ticket {ticket_id}")
-            else:
+                logger.info(f"Push delivered: ticket_id={ticket_id}")
+
+            elif receipt.get("status") == "error":
                 log.status = "error"
                 log.error_message = receipt.get("message")
                 log.save()
-                logger.error(f"Push delivery failed for ticket {ticket_id}: {receipt}")
+                logger.error(
+                    f"Push failed: ticket_id={ticket_id}, error={receipt.get('message')}"
+                )
+
+    except PushServerError as exc:
+        logger.exception(f"PushServerError while checking receipts: {exc.errors}")
+    except RequestException as exc:
+        logger.exception(f"RequestException while checking receipts: {str(exc)}")
     except Exception as exc:
-        logger.exception(f"Error while checking receipts: {str(exc)}")
+        logger.exception(f"Unhandled error while checking receipts: {str(exc)}")

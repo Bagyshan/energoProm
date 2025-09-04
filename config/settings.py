@@ -196,6 +196,10 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute=0, hour=0, day_of_month='25'),
         # 'schedule': timedelta(minutes=1)
     },
+    'check-expo-receipts': {
+        'task': 'notification.tasks.check_expo_receipts',
+        'schedule': timedelta(minutes=5)
+    }
 }
 
 
