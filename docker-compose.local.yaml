@@ -108,6 +108,7 @@ services:
       - media_volume:/usr/src/app/media
     depends_on:
       - backend
+      - flower
     networks:
       - backend
 

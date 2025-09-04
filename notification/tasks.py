@@ -48,7 +48,7 @@
 from celery import shared_task
 from exponent_server_sdk import (
     PushClient, PushMessage, PushServerError,
-    PushResponseError, DeviceNotRegisteredError
+    PushTicketError, DeviceNotRegisteredError
 )
 from requests.exceptions import RequestException
 from .models import ExpoPushToken, PushNotificationLog
