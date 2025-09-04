@@ -205,3 +205,5 @@ yarn-error.log*
 .vercel
 
 certbot
+notification/models.py
+notification/tasks.py

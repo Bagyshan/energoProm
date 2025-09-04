@@ -32,7 +32,7 @@ class Deal(models.Model):
         related_name='deals',
         null=True
     )
-    date_of_deal = models.DateField(auto_now_add=True)
+    date_of_deal = models.DateField()
     address = models.TextField()
     status = models.CharField(choices=DEAL_STATUS_CHOICES)
     phone_number = models.CharField(max_length=13)
