@@ -69,6 +69,7 @@ class CheckSerializer(serializers.ModelSerializer):
     house_card = HouseCardShortSerializer()
     username = UserShortSerializer()
     tariff = TariffSerializer()
+    counter_photo = serializers.SerializerMethodField()
     class Meta:
         model = Check
         fields = '__all__'
@@ -82,6 +83,18 @@ class CheckSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         )
+    
+    def get_counter_photo(self, obj):
+        """
+        Возвращает абсолютный URL к фото через request.build_absolute_uri
+        """
+        request = self.context.get("request")
+        if obj.counter_photo and hasattr(obj.counter_photo, "url"):
+            url = obj.counter_photo.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None
 
 
 
@@ -178,7 +191,17 @@ class GraphicCheckAggregatedSerializer(serializers.Serializer):
 
 # ============================ Photo update serializer =========================
 
+# class PhotoUpdateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Check
+#         fields = ['id', 'counter_photo', 'counter_current_check']
+#         read_only_fields = ['id']
+
 class PhotoUpdateSerializer(serializers.ModelSerializer):
+    # явные поля, чтобы drf-yasg и DRF однозначно поняли тип
+    counter_photo = serializers.ImageField(required=True)
+    counter_current_check = serializers.IntegerField(required=True)
+
     class Meta:
         model = Check
         fields = ['id', 'counter_photo', 'counter_current_check']

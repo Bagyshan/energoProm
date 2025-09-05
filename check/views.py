@@ -61,13 +61,15 @@ class LastCheckViewSet(viewsets.ReadOnlyModelViewSet):
         if not check:
             raise NotFound('Счетов пока нет.')
 
-        serializer = CheckSerializer(check)
+        serializer = CheckSerializer(check, context={'request': request})
         return Response(serializer.data)
     
 
     @swagger_auto_schema(auto_schema=None)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, context={'request': request})
+        return Response(serializer.data)
     
 
 
@@ -346,7 +348,126 @@ class GraphicCheckListAPIView(GenericAPIView):
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
+
+# class PhotoUpdateAPIView(generics.UpdateAPIView):
+#     queryset = Check.objects.all()
+#     serializer_class = PhotoUpdateSerializer
+#     parser_classes = [MultiPartParser, FormParser]
+#     http_method_names = ['patch']
+
+#     def get_object(self):
+#         return Check.objects.get(id=self.kwargs['pk'])
+
+#     @swagger_auto_schema(
+#         operation_description="Обновление фото счетчика и показаний",
+#         manual_parameters=[],
+#         request_body=openapi.Schema(
+#             type=openapi.TYPE_OBJECT,
+#             properties={
+#                 'counter_photo': openapi.Schema(
+#                     type=openapi.TYPE_FILE,
+#                     format=openapi.TYPE_FILE,  # 💥 ВАЖНО: именно формат binary — это файл
+#                     description='Фото счетчика'
+#                 ),
+#                 'counter_current_check': openapi.Schema(
+#                     type=openapi.TYPE_INTEGER,
+#                     description='Текущее показание'
+#                 ),
+#             },
+#             required=['counter_photo', 'counter_current_check']
+#         ),
+#         consumes=['multipart/form-data'],  # 💥 ВАЖНО: явно указываем, что используем multipart
+#         responses={200: PhotoUpdateSerializer()}
+#     )
+#     def patch(self, request, *args, **kwargs):
+#         return super().patch(request, *args, **kwargs)
+# from drf_yasg.utils import swagger_auto_schema
+# from drf_yasg import openapi
+# from rest_framework import generics
+# from rest_framework.parsers import MultiPartParser, FormParser
+# from .models import Check
+# from .serializers import PhotoUpdateSerializer
+
+# @extend_schema(
+#     tags=['User Send Counter Photo']
+# )
+# class PhotoUpdateAPIView(generics.UpdateAPIView):
+#     queryset = Check.objects.all()
+#     serializer_class = PhotoUpdateSerializer
+#     parser_classes = [MultiPartParser, FormParser]
+#     http_method_names = ['patch']
+
+#     def get_object(self):
+#         return Check.objects.get(id=self.kwargs['pk'])
+
+#     @swagger_auto_schema(
+#         operation_description="Обновление фото счетчика и показаний",
+#         manual_parameters=[
+#             # path param
+#             openapi.Parameter(
+#                 'pk',
+#                 openapi.IN_PATH,
+#                 description="ID объекта Check",
+#                 type=openapi.TYPE_INTEGER,
+#                 required=True
+#             ),
+#             # integer form field
+#             openapi.Parameter(
+#                 'counter_current_check',
+#                 openapi.IN_FORM,
+#                 description='Текущее показание счетчика',
+#                 type=openapi.TYPE_INTEGER,
+#                 required=True
+#             ),
+#             # file form field — это даёт кнопку "Choose File" в Swagger UI
+#             openapi.Parameter(
+#                 'counter_photo',
+#                 openapi.IN_FORM,
+#                 description='Фото счетчика (выбор файла с компьютера)',
+#                 type=openapi.TYPE_FILE,
+#                 format=openapi.FORMAT_BINARY,
+#                 required=True
+#             ),
+#         ],
+#         consumes=['multipart/form-data'],
+#         responses={200: PhotoUpdateSerializer()},
+#     )
+#     def patch(self, request, *args, **kwargs):
+#         return super().patch(request, *args, **kwargs)
+
+from drf_spectacular.utils import extend_schema, OpenApiExample
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import generics, status
+from rest_framework.response import Response
+from .models import Check
+from .serializers import PhotoUpdateSerializer
 @extend_schema(
+    request={
+        'multipart/form-data': {
+            'type': 'object',
+            'properties': {
+                'counter_current_check': {
+                    'type': 'integer',
+                    'example': 1234,
+                    'description': 'Текущее показание счётчика'
+                },
+                'counter_photo': {
+                    'type': 'string',
+                    'format': 'binary',  # 💥 именно binary, чтобы в Swagger UI была кнопка Choose File
+                    'description': 'Фото счётчика'
+                }
+            },
+            'required': ['counter_current_check', 'counter_photo']
+        }
+    },
+    responses={
+        200: PhotoUpdateSerializer,
+        400: OpenApiExample(
+            "Ошибка валидации",
+            value={"counter_current_check": ["Это поле обязательно."]},
+            response_only=True,
+        )
+    },
     tags=['User Send Counter Photo']
 )
 class PhotoUpdateAPIView(generics.UpdateAPIView):
@@ -358,29 +479,9 @@ class PhotoUpdateAPIView(generics.UpdateAPIView):
     def get_object(self):
         return Check.objects.get(id=self.kwargs['pk'])
 
-    @swagger_auto_schema(
-        operation_description="Обновление фото счетчика и показаний",
-        manual_parameters=[],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'counter_photo': openapi.Schema(
-                    type=openapi.TYPE_FILE,
-                    format=openapi.TYPE_FILE,  # 💥 ВАЖНО: именно формат binary — это файл
-                    description='Фото счетчика'
-                ),
-                'counter_current_check': openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                    description='Текущее показание'
-                ),
-            },
-            required=['counter_photo', 'counter_current_check']
-        ),
-        consumes=['multipart/form-data'],  # 💥 ВАЖНО: явно указываем, что используем multipart
-        responses={200: PhotoUpdateSerializer()}
-    )
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
+
 
 
 # views.py
