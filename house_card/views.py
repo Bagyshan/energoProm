@@ -44,7 +44,8 @@ from .serializers import (
     HouseCardGetSerializer,
     HouseCardCreateSerializer,
     HouseCardDetailSerializer,
-    HouseCardUserListSerializer
+    HouseCardUserListSerializer,
+    AllHouseCardListSerializer
 )
 
 @extend_schema(
@@ -255,3 +256,13 @@ class FieldTranslationView(views.APIView):
 
 
 
+
+
+
+@extend_schema(
+    tags=['HouseCard API\'s']
+)
+class GetAllHouseCardViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = HouseCard.objects.all()
+    serializer_class = AllHouseCardListSerializer
+    permission_classes = [AllowAny]

@@ -327,3 +327,34 @@ class HouseCardUserListSerializer(serializers.ModelSerializer):
             'tariff',
             'contract_date'
         ]
+
+
+
+
+
+
+
+
+
+
+#========================================= Get All House Cards Serializers ===============================================
+
+
+class UsernameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['name']
+
+class AllHouseCardListSerializer(serializers.ModelSerializer):
+    address = AddressGetSerializer()
+    user = UsernameSerializer()
+
+    class Meta:
+        model = HouseCard
+        fields = [
+            'id',
+            'house_card',
+            'address',
+            'user'
+        ]
+

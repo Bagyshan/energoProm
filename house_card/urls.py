@@ -21,6 +21,7 @@ from .views import (
     HouseCardCreateAPIView,
     HouseCardRetrieveUpdateDestroyAPIView,
     UserHouseCardListAPIView,
+    GetAllHouseCardViewSet,
 
     FieldTranslationView
 )
@@ -45,7 +46,7 @@ router.register(r'plot', PlotViewSet)
 router.register(r'route', RouteViewSet)
 
 router.register(r"house-cards", HouseCardGetViewSet)
-
+router.register(r"all-house-cards-for-my-home", GetAllHouseCardViewSet, basename='housecard-for-my-home')
 
 
 urlpatterns = [
