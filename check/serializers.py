@@ -196,6 +196,30 @@ class GraphicCheckAggregatedSerializer(serializers.Serializer):
 #         model = Check
 #         fields = ['id', 'counter_photo', 'counter_current_check']
 #         read_only_fields = ['id']
+from decimal import Decimal, ROUND_HALF_UP
+from .tasks import send_expo_push_notification
+import math
+from django.db import transaction
+import logging
+
+
+# def custom_round(value: Decimal | float) -> float:
+#     """
+#     Кастомное округление:
+#     - дробная часть >= 0.5 → вверх
+#     - дробная часть <= 0.4 → вниз
+#     - иначе — оставляем как есть
+#     """
+#     if value is None:
+#         return 0.0
+#     value = float(value)
+#     fraction = value - math.floor(value)
+#     if fraction >= 0.5:
+#         return math.ceil(value)
+#     elif fraction <= 0.4:
+#         return math.floor(value)
+#     else:
+#         return round(value, 2)
 
 class PhotoUpdateSerializer(serializers.ModelSerializer):
     # явные поля, чтобы drf-yasg и DRF однозначно поняли тип
@@ -207,17 +231,216 @@ class PhotoUpdateSerializer(serializers.ModelSerializer):
         fields = ['id', 'counter_photo', 'counter_current_check']
         read_only_fields = ['id']
 
+# class CheckVerificationUpdateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Check
+#         fields = ['counter_current_check']
+
+
+#     def validate_counter_current_check(self, value):
+#         if value is None:
+#             raise serializers.ValidationError("Параметр counter_current_check обязателен.")
+#         if value < 0:
+#             raise serializers.ValidationError("Показание не может быть отрицательным.")
+#         return value
+
+#     def update(self, instance: Check, validated_data):
+#         """
+#         1) Атомарно обновляем показание и все расчёты;
+#         2) Помечаем чек verified=True;
+#         3) Асинхронно отправляем push пользователю.
+#         """
+#         counter = validated_data.get('counter_current_check')
+#         if counter is None:
+#             return instance
+
+#         old_current_check_date = instance.current_check_date
+
+#         with transaction.atomic():
+#             prev = Decimal(instance.previous_check or 0)
+#             curr = Decimal(int(counter))
+
+#             if curr < prev:
+#                 raise serializers.ValidationError(
+#                     "Текущее показание меньше предыдущего. Проверьте данные или свяжитесь с поддержкой."
+#                 )
+
+#             consumption = curr - prev
+
+#             # тариф может быть NULL
+#             if instance.tariff is None:
+#                 kw_cost = Decimal('0')
+#                 nds_pct = Decimal('0')
+#                 nsp_pct = Decimal('0')
+#             else:
+#                 kw_cost = Decimal(str(instance.tariff.kw_cost or 0))
+#                 nds_pct = Decimal(str(instance.tariff.NDS or 0))
+#                 nsp_pct = Decimal(str(instance.tariff.NSP or 0))
+
+#             # Расчёты
+#             pay_for_electricity = consumption * kw_cost
+#             NDS_total = pay_for_electricity * nds_pct / Decimal('100')
+#             NSP_total = pay_for_electricity * nsp_pct / Decimal('100')
+#             amount_for_expenses = Decimal(str(instance.amount_for_expenses or 0))
+#             total_sum = pay_for_electricity + NDS_total + NSP_total + amount_for_expenses
+
+#             # Применяем кастомное округление
+#             consumption_val = custom_round(consumption)
+#             pay_val = custom_round(pay_for_electricity)
+#             nds_val = custom_round(NDS_total)
+#             nsp_val = custom_round(NSP_total)
+#             exp_val = custom_round(amount_for_expenses)
+#             total_val = custom_round(total_sum)
+
+#             # Присваиваем поля модели
+#             instance.counter_current_check = int(curr)
+#             instance.current_check = int(curr)
+#             instance.consumption = consumption_val
+#             instance.pay_for_electricity = pay_val
+#             instance.NDS_total = nds_val
+#             instance.NSP_total = nsp_val
+#             instance.amount_for_expenses = exp_val
+#             instance.total_sum = total_val
+#             instance.verified = True
+
+#             # Подготовка к следующему периоду
+#             instance.previous_check = int(curr)
+#             instance.previous_check_date = old_current_check_date
+
+#             instance.save()
+
+#         # Push-уведомление пользователю
+#         try:
+#             title = "Чек подтверждён — требуется оплата"
+#             body = (
+#                 f"Чек подготовлен. Потребление: {consumption_val:.2f} kW. "
+#                 f"К оплате: {total_val:.2f}."
+#             )
+#             data = {
+#                 "check_id": instance.id,
+#                 "total_sum": str(total_val),
+#                 "consumption": str(consumption_val),
+#             }
+#             send_expo_push_notification.delay(instance.username_id, title, body, data)
+#         except Exception:
+#             logging.exception("Не удалось поставить в очередь задачу отправки push-уведомления.")
+
+#         return instance
+
+
+
+
+# serializers.py (часть)
+from decimal import Decimal
+import math
+from django.db import transaction
+import logging
+from rest_framework import serializers
+
+def custom_round(value: Decimal | float) -> float:
+    if value is None:
+        return 0.0
+    value = float(value)
+    fraction = value - math.floor(value)
+    if fraction >= 0.5:
+        return float(math.ceil(value))
+    elif fraction <= 0.4:
+        return float(math.floor(value))
+    else:
+        return round(value, 2)
+
 class CheckVerificationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Check
         fields = ['counter_current_check']
 
-    def update(self, instance, validated_data):
-        instance.counter_current_check = validated_data.get('counter_current_check', instance.counter_current_check)
-        instance.current_check = validated_data.get('counter_current_check', instance.counter_current_check)
-        instance.consumption = validated_data.get('counter_current_check', instance.counter_current_check) - validated_data.get('previous_check', instance.previous_check)
-        instance.verified = True  # Принудительно подтверждаем
-        instance.save()
+    def validate_counter_current_check(self, value):
+        if value is None:
+            raise serializers.ValidationError("Параметр counter_current_check обязателен.")
+        if value < 0:
+            raise serializers.ValidationError("Показание не может быть отрицательным.")
+        return value
+
+    def update(self, instance: Check, validated_data):
+        counter = validated_data.get('counter_current_check')
+        if counter is None:
+            return instance
+
+        # old_current_check_date = instance.current_check_date
+        previous_check_date = instance.previous_check_date
+
+        with transaction.atomic():
+            prev = Decimal(str(instance.previous_check or 0))
+            curr = Decimal(str(int(counter)))
+
+            if curr < prev:
+                raise serializers.ValidationError(
+                    "Текущее показание меньше предыдущего. Проверьте данные или свяжитесь с поддержкой."
+                )
+
+            consumption = curr - prev  # Decimal
+
+            # --- получение тарифной логики ---
+            if instance.tariff is None:
+                energy_charge = Decimal('0')
+                nds_pct = Decimal('0')
+                nsp_pct = Decimal('0')
+            else:
+                nds_pct = Decimal(str(instance.tariff.NDS or 0))
+                nsp_pct = Decimal(str(instance.tariff.NSP or 0))
+                # ВАЖНО: единая точка расчёта
+                energy_charge = instance.tariff.calculate_energy_charge(consumption)
+
+            # остальные элементы
+            amount_for_expenses = Decimal(str(instance.amount_for_expenses or 0))
+
+            # НДС и НСП считаем от energy_charge (бизнес-правило: можно менять)
+            NDS_total = (energy_charge * nds_pct / Decimal('100')).quantize(Decimal('0.01'))
+            NSP_total = (energy_charge * nsp_pct / Decimal('100')).quantize(Decimal('0.01'))
+
+            total_sum = (energy_charge + NDS_total + NSP_total + amount_for_expenses).quantize(Decimal('0.01'))
+
+            # Применяем кастомное округление (ваша функция возвращает float)
+            consumption_val = custom_round(consumption)
+            pay_val = custom_round(energy_charge)
+            nds_val = custom_round(NDS_total)
+            nsp_val = custom_round(NSP_total)
+            exp_val = custom_round(amount_for_expenses)
+            total_val = custom_round(total_sum)
+
+            # Сохраняем в instance
+            instance.counter_current_check = int(curr)
+            instance.current_check = int(curr)
+            instance.consumption = consumption_val
+            instance.pay_for_electricity = pay_val
+            instance.NDS_total = nds_val
+            instance.NSP_total = nsp_val
+            instance.amount_for_expenses = exp_val
+            instance.total_sum = total_val
+            instance.verified = True
+
+            # Подготовка к следующему периода
+            instance.previous_check = int(prev)
+            instance.previous_check_date = previous_check_date
+
+            instance.save()
+
+        # Push notification (как у вас было)
+        try:
+            title = "Чек подтверждён — требуется оплата"
+            body = (
+                f"Чек подготовлен. Потребление: {consumption_val:.2f} kW. "
+                f"К оплате: {total_val:.2f}."
+            )
+            data = {
+                "check_id": instance.id,
+                "total_sum": str(total_val),
+                "consumption": str(consumption_val),
+            }
+            send_expo_push_notification.delay(instance.username_id, title, body, data)
+        except Exception:
+            logging.exception("Не удалось поставить в очередь задачу отправки push-уведомления.")
+
         return instance
 
 

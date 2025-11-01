@@ -7,3 +7,10 @@ from .models import Check
 class CheckAdmin(admin.ModelAdmin):
     list_display = ('id', )
 # Register your models here.
+
+
+from .models import PaymentTransaction
+# Register your models here.
+@admin.register(PaymentTransaction)
+class PaymentTransactionAdmin(admin.ModelAdmin):
+    list_display = ('id', )

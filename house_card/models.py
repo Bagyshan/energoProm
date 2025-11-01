@@ -114,13 +114,116 @@ class Counter(models.Model):
 
 # Tariff models
 
+# class Tariff(models.Model):
+#     name = models.CharField(max_length=100)
+#     NDS = models.FloatField(default=0, null=True, blank=True)
+#     NSP = models.FloatField(default=0, null=True, blank=True)
+#     kw_cost = models.FloatField()
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+
+from decimal import Decimal
+from django.db import models
+from django.core.exceptions import ValidationError
+
 class Tariff(models.Model):
+    PRICING_FLAT = 'flat'
+    PRICING_TIERED = 'tiered'
+    PRICING_CHOICES = [
+        (PRICING_FLAT, 'Flat'),
+        (PRICING_TIERED, 'Tiered'),
+    ]
+
     name = models.CharField(max_length=100)
     NDS = models.FloatField(default=0, null=True, blank=True)
     NSP = models.FloatField(default=0, null=True, blank=True)
-    kw_cost = models.FloatField()
+    kw_cost = models.DecimalField(max_digits=12, decimal_places=4, default=Decimal('0.0'))  # for flat pricing
+    pricing_type = models.CharField(max_length=10, choices=PRICING_CHOICES, default=PRICING_FLAT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def calculate_energy_charge(self, consumption) -> Decimal:
+        """
+        Возвращает сумму (Decimal) к оплате за energy consumption (в kWh),
+        учитывая тип тарифа (flat или tiered).
+        """
+        from decimal import Decimal, ROUND_HALF_UP
+        if consumption is None:
+            return Decimal('0')
+
+        cons = Decimal(str(consumption))
+        if cons <= 0:
+            return Decimal('0')
+
+        if self.pricing_type == self.PRICING_FLAT:
+            return (cons * (self.kw_cost or Decimal('0'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        # TIERED
+        bands = list(self.bands.order_by('min_kwh').all())
+        total = Decimal('0')
+        processed = Decimal('0')  # how many kWh already billed
+        for band in bands:
+            if cons <= processed:
+                break
+
+            band_min = Decimal(str(band.min_kwh))
+            band_max = Decimal(str(band.max_kwh)) if band.max_kwh is not None else None
+            # start point for this band: the greater of band_min and processed
+            start = band_min if band_min > processed else processed
+
+            # if consumption less or equal start -> nothing in this band
+            if cons <= start:
+                continue
+
+            # compute available capacity in this band (upper bound - start)
+            if band_max is not None:
+                end = band_max
+                band_capacity = end - start
+                to_take = cons - start if cons < end else band_capacity
+            else:
+                # open-ended band (no max) — take all remaining consumption
+                to_take = cons - start
+
+            if to_take <= 0:
+                continue
+
+            price = Decimal(str(band.price_per_kwh))
+            total += (to_take * price)
+            processed = start + to_take
+
+        # финальное округление до стотых
+        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+class TariffBand(models.Model):
+    tariff = models.ForeignKey(Tariff, on_delete=models.CASCADE, related_name='bands')
+    # min_kwh inclusive
+    min_kwh = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    # max_kwh exclusive (nullable = open ended)
+    max_kwh = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
+    price_per_kwh = models.DecimalField(max_digits=12, decimal_places=4)
+
+    order = models.PositiveSmallIntegerField(default=0)  # для удобства сортировки/админки
+
+    class Meta:
+        ordering = ['order', 'min_kwh']
+
+    def clean(self):
+        # базовая валидация
+        if self.min_kwh is None:
+            raise ValidationError("min_kwh is required")
+        if self.min_kwh < 0:
+            raise ValidationError("min_kwh must be >= 0")
+        if self.max_kwh is not None:
+            if self.max_kwh <= self.min_kwh:
+                raise ValidationError("max_kwh must be greater than min_kwh")
+
+    def __str__(self):
+        return f"{self.tariff.name}: {self.min_kwh} - {self.max_kwh or '∞'} @ {self.price_per_kwh}"
+
+
+
+
 
 
 # Plot models

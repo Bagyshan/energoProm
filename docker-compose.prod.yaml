@@ -76,8 +76,11 @@ services:
     image: mher/flower
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_URL_PREFIX=/flower
     ports:
       - "5555:5555"
+    volumes:
+      - flower_static:/usr/local/lib/python3.11/site-packages/flower/static
     depends_on:
       - redis
       - celery
@@ -111,6 +114,7 @@ services:
       - ./certbot/www:/var/www/certbot
       - static_volume:/usr/src/app/static
       - media_volume:/usr/src/app/media
+      - flower_static:/usr/local/lib/python3.11/site-packages/flower/static
     depends_on:
       - backend
       - flower
@@ -123,6 +127,7 @@ volumes:
   postgres_data:
   static_volume:
   media_volume:
+  flower_static:
 
 networks:
   backend:

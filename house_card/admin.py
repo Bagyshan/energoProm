@@ -12,7 +12,8 @@ from .models import (
     CounterType,
     Counter,
 
-    Tariff, 
+    Tariff,
+    TariffBand,
 
     Plot,
     Route, 
@@ -77,9 +78,12 @@ class RouteAdmin(admin.ModelAdmin):
 
 
 
-
+class TariffBandInline(admin.TabularInline):
+    model = TariffBand
+    extra = 1
 @admin.register(Tariff)
 class TariffAdmin(admin.ModelAdmin):
+    inlines = [TariffBandInline]
     list_display = ('id', )
 
 

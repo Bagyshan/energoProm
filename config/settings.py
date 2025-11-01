@@ -65,7 +65,7 @@ INSTALLED_APPS = [
     'house_card',
     'check',
     'notification',
-    'bid'
+    'bid',
 ]
 
 MIDDLEWARE = [
@@ -91,6 +91,17 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
     ]
 }
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=31),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',)
+}
+
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'EnergoProm API',
@@ -201,6 +212,17 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(minutes=5)
     }
 }
+
+
+
+ENERGOPROM_BASE_URL = os.getenv('ENERGOPROM_BASE_URL')
+ENERGOPROM_API_KEY = os.getenv('ENERGOPROM_API_KEY')
+ENERGOPROM_WEBHOOK_KEY = os.getenv('ENERGOPROM_API_KEY')
+ENERGOPROM_EMAIL = os.getenv('ENERGOPROM_EMAIL')
+ENERGOPROM_PASSWORD = os.getenv('ENERGOPROM_PASSWORD')
+ENERGOPROM_REQUEST_TIMEOUT = int(os.getenv('ENERGOPROM_REQUEST_TIMEOUT', default=10))
+AUTO_CREATE_INVOICE = os.getenv('AUTO_CREATE_INVOICE', default=False)
+
 
 
 EMAIL_HOST = os.getenv('EMAIL_HOST')

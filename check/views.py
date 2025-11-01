@@ -563,3 +563,219 @@ class CheckTranslationView(APIView):
     
 
 
+
+
+
+"======================================== My Home views ======================================="
+
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from decimal import Decimal
+from .models import Check, PaymentTransaction
+from .client import EnergopromClient
+from django.utils import timezone
+from rest_framework.decorators import api_view, permission_classes
+from django.db import transaction
+import logging
+from django.http import HttpResponse
+from config import settings
+
+
+client = EnergopromClient()
+
+
+logger = logging.getLogger(__name__)
+
+
+class CheckPaymentPreview(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+
+    def post(self, request, pk):
+        check = get_object_or_404(Check, pk=pk)
+        if check.username != request.user and not request.user.is_staff:
+            return Response({'detail': 'Forbidden'}, status=403)
+
+
+        amount = check.payment_sum or check.total_sum or check.pay_for_electricity
+        if amount is None:
+            return Response({'detail': 'No amount for payment'}, status=400)
+
+
+        try:
+            data = client.preview(account=check.house_card.house_card, total=Decimal(str(amount)))
+        except Exception as e:
+            logger.exception('energoprom preview failed')
+            return Response({'detail': 'external service error'}, status=503)
+
+
+        return Response(data)
+
+class CheckPaymentCreate(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+
+    def post(self, request, pk):
+
+        check = get_object_or_404(Check, pk=pk)
+        if check.username != request.user and not request.user.is_staff:
+            return Response({'detail': 'Forbidden'}, status=403)
+
+
+        amount = check.payment_sum or check.total_sum or check.pay_for_electricity
+        if not amount:
+            return Response({'detail': 'No amount for payment'}, status=400)
+
+
+        try:
+            data = client.create_invoice(account=check.house_card.house_card, total=Decimal(str(amount)))
+        except Exception as e:
+            logger.exception('energoprom create_invoice failed')
+            return Response({'detail': 'external service error'}, status=503)
+
+
+        # save to check
+        requisite = data.get('requisite')
+        sum_value = data.get('sum') or str(amount)
+        urls = data.get('urls')
+
+
+        check.payment_requisite = requisite
+        try:
+            check.payment_sum = Decimal(str(sum_value))
+        except Exception:
+            check.payment_sum = Decimal(str(amount))
+        check.payment_urls = urls
+        check.save(update_fields=['payment_requisite', 'payment_sum', 'payment_urls', 'updated_at'])
+
+
+        return Response(data, status=201)
+
+class CheckPaymentsList(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+
+    def get(self, request, pk):
+        check = get_object_or_404(Check, pk=pk)
+        if check.username != request.user and not request.user.is_staff:
+            return Response({'detail': 'Forbidden'}, status=403)
+        qs = check.payments.all().order_by('-created_at')
+        out = []
+        for p in qs:
+            out.append({
+            'id': p.id,
+            'requisite': p.requisite,
+            'txn_id': p.txn_id,
+            'source': p.source,
+            'amount': str(p.amount),
+            'paid_date': p.paid_date.isoformat() if p.paid_date else None,
+            'created_at': p.created_at.isoformat(),
+            })
+        return Response(out)
+
+class CheckPaymentPdf(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+
+    def get(self, request, pk):
+        check = get_object_or_404(Check, pk=pk)
+        if check.username != request.user and not request.user.is_staff:
+            return Response({'detail': 'Forbidden'}, status=403)
+        if not check.payment_requisite:
+            return Response({'detail': 'No requisite'}, status=400)
+        try:
+            pdf_bytes = client.get_pdf(check.payment_requisite)
+        except Exception as e:
+            logger.exception('energoprom get_pdf failed')
+            return Response({'detail': 'external service error'}, status=503)
+        # return PDF as attachment
+        resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+        resp['Content-Disposition'] = f'attachment; filename="receipt_{check.payment_requisite}.pdf"'
+        return resp
+
+
+
+from .utils import _parse_date_ddmmyyyy
+from django.utils.crypto import constant_time_compare
+
+# Webhook endpoint
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def energoprom_webhook(request):
+    """Expected payload example:
+    {
+    "requisite":"0239291841091997",
+    "account":"670050408",
+    "txn_id":"1091997",
+    "source":"ДоскредоБанк",
+    "sum":"8.00",
+    "paid_date":"12.10.2025"
+    }
+    Header must include X-ENERGOPROM-KEY: <secret>
+    """
+    header_key = request.headers.get('X-ENERGOPROM-KEY') or request.META.get('HTTP_X_ENERGOPROM_KEY')
+    expected = getattr(settings, 'ENERGOPROM_WEBHOOK_KEY', None)
+    if not expected or not header_key or not constant_time_compare(header_key, expected):
+        logger.warning('invalid webhook auth')
+        return Response({'detail': 'unauthorized'}, status=401)
+
+
+    payload = request.data
+    requisite = payload.get('requisite')
+    account = payload.get('account')
+    txn_id = payload.get('txn_id') or payload.get('txn')
+    source = payload.get('source')
+    amount = payload.get('sum')
+    paid_date_raw = payload.get('paid_date')
+    paid_date = _parse_date_ddmmyyyy(paid_date_raw)
+
+
+    if not requisite and not account:
+        return Response({'detail': 'invalid payload'}, status=400)
+
+
+    checks = Check.objects.none()
+    if requisite:
+        checks = Check.objects.filter(payment_requisite=requisite)
+    if not checks.exists() and account:
+        checks = Check.objects.filter(house_card__house_card=account)
+
+
+    created = 0
+    with transaction.atomic():
+        for check in checks.select_for_update():
+            # idempotency
+            if txn_id and PaymentTransaction.objects.filter(txn_id=txn_id).exists():
+                continue
+            try:
+                PaymentTransaction.objects.create(
+                    check=check,
+                    requisite=requisite or check.payment_requisite or '',
+                    txn_id=txn_id,
+                    source=source,
+                    amount=Decimal(str(amount)),
+                    paid_date=paid_date,
+                    raw_payload=payload
+                )
+            except Exception:
+                logger.exception('failed to create PaymentTransaction')
+                continue
+
+
+            # mark paid if amount >= expected
+            try:
+                expected = Decimal(str(check.payment_sum or check.total_sum or 0))
+                if expected > 0 and Decimal(str(amount)) >= expected:
+                    check.paid = True
+                    check.paid_at = timezone.now()
+                    check.save(update_fields=['paid', 'paid_at'])
+            except Exception:
+                logger.exception('failed to compare amounts')   
+
+
+            created += 1
+
+
+    return Response({'created': created}, status=201)
