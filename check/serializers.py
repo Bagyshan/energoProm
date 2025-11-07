@@ -470,3 +470,30 @@ class CheckRetrieveUnverifiedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Check
         fields = ['id', 'house_card', 'username', 'counter_photo', 'counter_current_check', 'created_at']
+
+
+
+
+
+
+
+
+
+
+
+# class EnergopromWebhookSerializer(serializers.Serializer):
+#     requisite = serializers.CharField(required=False, allow_blank=True)
+#     account = serializers.CharField(required=False, allow_blank=True)
+#     txn_id = serializers.CharField(required=False, allow_blank=True)
+#     source = serializers.CharField(required=False, allow_blank=True)
+#     amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+#     paid_date = serializers.CharField()  # dd.mm.yyyy
+
+
+class EnergopromWebhookSerializer(serializers.Serializer):
+    requisite = serializers.CharField(required=False, allow_blank=True)
+    account = serializers.CharField(required=False, allow_blank=True)
+    txn_id = serializers.CharField(required=False, allow_blank=True)
+    source = serializers.CharField(required=False, allow_blank=True)
+    amount = serializers.CharField(required=True)  # Оставляем как строку для гибкости
+    paid_date = serializers.CharField(required=False, allow_blank=True)

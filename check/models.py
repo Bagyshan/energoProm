@@ -67,4 +67,4 @@ class PaymentTransaction(models.Model):
         ]
 
     def __str__(self):
-        return f"PaymentTransaction(check={self.check_id}, txn={self.txn_id}, amount={self.amount})"
+        return f"PaymentTransaction(check={self.check_fk}, txn={self.txn_id}, amount={self.amount})"

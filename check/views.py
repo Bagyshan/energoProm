@@ -699,8 +699,67 @@ class CheckPaymentPdf(APIView):
 
 from .utils import _parse_date_ddmmyyyy
 from django.utils.crypto import constant_time_compare
+import re
+import decimal
 
 # Webhook endpoint
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+)
+from drf_spectacular.types import OpenApiTypes
+
+
+from .serializers import EnergopromWebhookSerializer
+
+
+@extend_schema(
+    tags=["Payments"],
+    summary="Webhook поступления оплаты",
+    description=(
+        "WebHook от банка/интегратора. "
+        "По `requisite` или `account` ищется чек. "
+        "Создаётся `PaymentTransaction`, при необходимости чек помечается как оплаченный."
+    ),
+    request=EnergopromWebhookSerializer,
+    parameters=[
+        OpenApiParameter(
+            name="X-ENERGOPROM-KEY",
+            location=OpenApiParameter.HEADER,
+            required=True,
+            type=str,
+            description="Секретный ключ для аутентификации webhook-запроса"
+        ),
+    ],
+    responses={
+        201: OpenApiExample(
+            name="Успех",
+            value={"created": 1},
+        ),
+        400: OpenApiExample(
+            name="Неверные данные",
+            value={"detail": "invalid payload"},
+        ),
+        401: OpenApiExample(
+            name="Неверный ключ",
+            value={"detail": "unauthorized"},
+        ),
+    },
+    examples=[
+        OpenApiExample(
+            name="Пример запроса",
+            value={
+                "requisite": "0239291841091997",
+                "account": "670050408",
+                "txn_id": "1091997",
+                "source": "ДоскредоБанк",
+                "amount": "8.00",
+                "paid_date": "12.10.2025"
+            },
+        ),
+    ],
+)
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def energoprom_webhook(request):
@@ -710,7 +769,7 @@ def energoprom_webhook(request):
     "account":"670050408",
     "txn_id":"1091997",
     "source":"ДоскредоБанк",
-    "sum":"8.00",
+    "amount":"8.00",
     "paid_date":"12.10.2025"
     }
     Header must include X-ENERGOPROM-KEY: <secret>
@@ -721,27 +780,38 @@ def energoprom_webhook(request):
         logger.warning('invalid webhook auth')
         return Response({'detail': 'unauthorized'}, status=401)
 
-
     payload = request.data
     requisite = payload.get('requisite')
     account = payload.get('account')
     txn_id = payload.get('txn_id') or payload.get('txn')
     source = payload.get('source')
-    amount = payload.get('sum')
+    amount_str = payload.get('amount')
     paid_date_raw = payload.get('paid_date')
     paid_date = _parse_date_ddmmyyyy(paid_date_raw)
-
 
     if not requisite and not account:
         return Response({'detail': 'invalid payload'}, status=400)
 
+    # Безопасное преобразование amount в Decimal
+    try:
+        # Очищаем строку от возможных лишних символов
+        if amount_str:
+            # Удаляем все пробелы и нечисловые символы, кроме точек и запятых
+            cleaned_amount = re.sub(r'[^\d.,]', '', str(amount_str))
+            # Заменяем запятую на точку для корректного преобразования
+            cleaned_amount = cleaned_amount.replace(',', '.')
+            amount = Decimal(cleaned_amount)
+        else:
+            amount = Decimal('0')
+    except (decimal.InvalidOperation, TypeError, ValueError) as e:
+        logger.warning(f'Invalid amount format: {amount_str}, error: {e}')
+        return Response({'detail': f'invalid amount format: {amount_str}'}, status=400)
 
     checks = Check.objects.none()
     if requisite:
         checks = Check.objects.filter(payment_requisite=requisite)
     if not checks.exists() and account:
         checks = Check.objects.filter(house_card__house_card=account)
-
 
     created = 0
     with transaction.atomic():
@@ -750,32 +820,156 @@ def energoprom_webhook(request):
             if txn_id and PaymentTransaction.objects.filter(txn_id=txn_id).exists():
                 continue
             try:
+                # Используем правильное имя поля check_fk вместо check
+                # И убираем raw_payload, так как его нет в модели
                 PaymentTransaction.objects.create(
-                    check=check,
+                    check_fk=check,  # Исправлено с check на check_fk
                     requisite=requisite or check.payment_requisite or '',
                     txn_id=txn_id,
                     source=source,
-                    amount=Decimal(str(amount)),
+                    amount=amount,
                     paid_date=paid_date,
-                    raw_payload=payload
+                    # raw_payload=payload  # Убрано, так как поля нет в модели
                 )
             except Exception:
                 logger.exception('failed to create PaymentTransaction')
                 continue
 
-
             # mark paid if amount >= expected
             try:
-                expected = Decimal(str(check.payment_sum or check.total_sum or 0))
-                if expected > 0 and Decimal(str(amount)) >= expected:
+                expected_amount = Decimal(str(check.payment_sum or check.total_sum or 0))
+                if expected_amount > 0 and amount >= expected_amount:
                     check.paid = True
                     check.paid_at = timezone.now()
                     check.save(update_fields=['paid', 'paid_at'])
             except Exception:
                 logger.exception('failed to compare amounts')   
 
-
             created += 1
 
-
     return Response({'created': created}, status=201)
+
+# @extend_schema(
+#     tags=["Payments"],
+#     summary="Webhook поступления оплаты",
+#     description=(
+#         "WebHook от банка/интегратора. "
+#         "По `requisite` или `account` ищется чек. "
+#         "Создаётся `PaymentTransaction`, при необходимости чек помечается как оплаченный."
+#     ),
+#     request=EnergopromWebhookSerializer,
+#     parameters=[
+#         OpenApiParameter(
+#             name="X-ENERGOPROM-KEY",
+#             location=OpenApiParameter.HEADER,
+#             required=True,
+#             type=str,
+#             description="Секретный ключ для аутентификации webhook-запроса"
+#         ),
+#     ],
+#     responses={
+#         201: OpenApiExample(
+#             name="Успех",
+#             value={"created": 1},
+#         ),
+#         400: OpenApiExample(
+#             name="Неверные данные",
+#             value={"detail": "invalid payload"},
+#         ),
+#         401: OpenApiExample(
+#             name="Неверный ключ",
+#             value={"detail": "unauthorized"},
+#         ),
+#     },
+#     examples=[
+#         OpenApiExample(
+#             name="Пример запроса",
+#             value={
+#                 "requisite": "0239291841091997",
+#                 "account": "670050408",
+#                 "txn_id": "1091997",
+#                 "source": "ДоскредоБанк",
+#                 "amount": "8.00",
+#                 "paid_date": "12.10.2025"
+#             },
+#         ),
+#     ],
+# )
+# @api_view(['POST'])
+# @permission_classes([permissions.AllowAny])
+# def energoprom_webhook(request):
+#     """Expected payload example:
+#     {
+#     "requisite":"0239291841091997",
+#     "account":"670050408",
+#     "txn_id":"1091997",
+#     "source":"ДоскредоБанк",
+#     "amount":"8.00",
+#     "paid_date":"12.10.2025"
+#     }
+#     Header must include X-ENERGOPROM-KEY: <secret>
+#     """
+#     header_key = request.headers.get('X-ENERGOPROM-KEY') or request.META.get('HTTP_X_ENERGOPROM_KEY')
+#     expected = getattr(settings, 'ENERGOPROM_WEBHOOK_KEY', None)
+#     if not expected or not header_key or not constant_time_compare(header_key, expected):
+#         logger.warning('invalid webhook auth')
+#         return Response({'detail': 'unauthorized'}, status=401)
+
+
+#     payload = request.data
+#     requisite = payload.get('requisite')
+#     account = payload.get('account')
+#     txn_id = payload.get('txn_id') or payload.get('txn')
+#     source = payload.get('source')
+#     amount = payload.get('amount')
+#     paid_date_raw = payload.get('paid_date')
+#     paid_date = _parse_date_ddmmyyyy(paid_date_raw)
+
+
+#     if not requisite and not account:
+#         return Response({'detail': 'invalid payload'}, status=400)
+
+
+#     checks = Check.objects.none()
+#     if requisite:
+#         checks = Check.objects.filter(payment_requisite=requisite)
+#     if not checks.exists() and account:
+#         checks = Check.objects.filter(house_card__house_card=account)
+
+
+#     created = 0
+#     with transaction.atomic():
+#         for check in checks.select_for_update():
+#             # idempotency
+#             if txn_id and PaymentTransaction.objects.filter(txn_id=txn_id).exists():
+#                 continue
+#             try:
+#                 PaymentTransaction.objects.create(
+#                     check=check,
+#                     requisite=requisite or check.payment_requisite or '',
+#                     txn_id=txn_id,
+#                     source=source,
+#                     amount=Decimal(str(amount)),
+#                     paid_date=paid_date,
+#                     raw_payload=payload
+#                 )
+#             except Exception:
+#                 logger.exception('failed to create PaymentTransaction')
+#                 continue
+
+
+#             # mark paid if amount >= expected
+#             try:
+#                 expected = Decimal(str(check.payment_sum or check.total_sum or 0))
+#                 if expected > 0 and Decimal(str(amount)) >= expected:
+#                     check.paid = True
+#                     check.paid_at = timezone.now()
+#                     check.save(update_fields=['paid', 'paid_at'])
+#             except Exception:
+#                 logger.exception('failed to compare amounts')   
+
+
+#             created += 1
+
+
+#     return Response({'created': created}, status=201)
