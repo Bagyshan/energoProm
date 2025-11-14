@@ -49,7 +49,7 @@ class Address(models.Model):
     )
     house = models.CharField(blank=True)
     liter = models.CharField(max_length=8, null=True, blank=True)
-    apartment = models.PositiveIntegerField(null=True, blank=True)
+    apartment = models.CharField(max_length=8, null=True, blank=True)
     apartment_liter = models.CharField(max_length=8, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -261,7 +261,8 @@ class Route(models.Model):
 # House Card model
 
 class HouseCard(models.Model):
-    house_card = models.PositiveIntegerField(default=0)
+    house_card = models.CharField(max_length=50, default=0, unique=True)
+    old_house_card = models.CharField(max_length=50, default=0, null=True, blank=True, unique=False)
     address = models.ForeignKey(
         Address,
         on_delete=models.SET_NULL,
@@ -273,8 +274,8 @@ class HouseCard(models.Model):
         on_delete=models.CASCADE,
         related_name='house_cards'
     )
-    contract_number = models.PositiveIntegerField()
-    contract_date = models.DateField()
+    contract_number = models.CharField(null=True, blank=True)
+    contract_date = models.DateField(null=True, blank=True)
     plot = models.ForeignKey(
         Plot,
         on_delete=models.SET_NULL,
@@ -301,7 +302,7 @@ class HouseCard(models.Model):
         related_name='house_cards'
     )
 
-    tp_number = models.PositiveIntegerField()
+    tp_number = models.PositiveIntegerField(null=True, blank=True)
     household_needs = models.FloatField(null=True, blank=True)
     fact_summer = models.FloatField(null=True, blank=True)
     fact_winter = models.FloatField(null=True, blank=True)

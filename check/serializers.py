@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Check
+from .models import Check, PaymentTransaction
 from house_card.models import (
     Street,
     Address,
@@ -497,3 +497,29 @@ class EnergopromWebhookSerializer(serializers.Serializer):
     source = serializers.CharField(required=False, allow_blank=True)
     amount = serializers.CharField(required=True)  # Оставляем как строку для гибкости
     paid_date = serializers.CharField(required=False, allow_blank=True)
+
+
+
+
+
+
+
+class PaymentTransactionHistorySerializer(serializers.ModelSerializer):
+    check_id = serializers.IntegerField(source='check_fk.id', read_only=True)
+    house_card_id = serializers.IntegerField(source='check_fk.house_card.id', read_only=True)
+    user_id = serializers.CharField(source='check_fk.username.id', read_only=True)
+
+    class Meta:
+        model = PaymentTransaction
+        fields = [
+            'id',
+            'check_id',
+            'house_card_id',
+            'user_id',
+            'requisite',
+            'txn_id',
+            'source',
+            'amount',
+            'paid_date',
+            'created_at',
+        ]

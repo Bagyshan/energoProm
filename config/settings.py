@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'channels',
     'django_celery_beat',
+    'import_export',
 
     # apps
     'user',

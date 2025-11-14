@@ -15,6 +15,7 @@ from .views import (
     CheckPaymentsList,
     CheckPaymentPdf,
     energoprom_webhook,
+    PaymentTransactionHistoryView
 )
 
 router = DefaultRouter()
@@ -37,5 +38,6 @@ urlpatterns = [
     path('<int:pk>/payment/create/', CheckPaymentCreate.as_view(), name='check-payment-create'),
     path('<int:pk>/payments/', CheckPaymentsList.as_view(), name='check-payments-list'),
     path('<int:pk>/payment/pdf/', CheckPaymentPdf.as_view(), name='check-payment-pdf'),
+    path('payments/history/', PaymentTransactionHistoryView.as_view(), name='payment-history'),
     path('energoprom/webhook/', energoprom_webhook, name='energoprom-webhook'),
 ]
