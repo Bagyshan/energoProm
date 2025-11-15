@@ -1,5 +1,7 @@
 from rest_framework import viewsets, views, generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import PermissionDenied, NotFound
+from house_card.models import HouseCard
 from .models import Check
 from .serializers import CheckSerializer, PhotoUpdateSerializer, CheckVerificationUpdateSerializer, CheckShortListUnverifiedSerializer, CheckRetrieveUnverifiedSerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -44,6 +46,7 @@ class LastCheckViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['house_card']
 
+
     @swagger_auto_schema(
         manual_parameters=[
             openapi.Parameter(
@@ -57,13 +60,38 @@ class LastCheckViewSet(viewsets.ReadOnlyModelViewSet):
         responses={200: CheckSerializer}
     )
     def list(self, request, *args, **kwargs):
-        check = Check.objects.order_by('-created_at').first()
+        house_card_id = request.query_params.get('house_card')
+        
+        # Проверяем, что house_card передан
+        if not house_card_id:
+            return Response(
+                {'detail': 'Параметр house_card обязателен'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Проверяем, что house_card существует и принадлежит пользователю
+        try:
+            house_card = HouseCard.objects.get(
+                id=house_card_id,
+                user=request.user  # Проверяем, что house_card принадлежит текущему пользователю
+            )
+        except HouseCard.DoesNotExist:
+            raise NotFound('Лицевой счет не найден или у вас нет к нему доступа.')
+        
+        # Получаем последний чек для указанного house_card
+        check = Check.objects.filter(
+            house_card=house_card
+        ).order_by('-created_at').first()
+        
         if not check:
-            raise NotFound('Счетов пока нет.')
-
+            raise NotFound('Счетов для данного лицевого счета пока нет.')
+        
+        # Проверяем, что чек принадлежит пользователю
+        if check.username != request.user:
+            raise PermissionDenied('У вас нет доступа к этому счету.')
+        
         serializer = CheckSerializer(check, context={'request': request})
         return Response(serializer.data)
-    
 
     @swagger_auto_schema(auto_schema=None)
     def retrieve(self, request, *args, **kwargs):

@@ -55,7 +55,10 @@ class HouseCardShortSerializer(serializers.ModelSerializer):
             'penalty',
         ]
 
+
+from house_card.serializers import TariffBandSerializer
 class TariffSerializer(serializers.ModelSerializer):
+    tariff_band = TariffBandSerializer(many=True, read_only=True, source='bands')
     class Meta:
         model = Tariff
         fields = '__all__'

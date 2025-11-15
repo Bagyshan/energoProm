@@ -13,6 +13,7 @@ from .models import (
     Counter,
 
     Tariff, 
+    TariffBand,
 
     Plot,
     Route, 
@@ -86,10 +87,14 @@ class CounterSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'registered_at', 'updated_at']
 
 
-
+class TariffBandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TariffBand
+        fields = ['id', 'min_kwh', 'max_kwh', 'price_per_kwh', 'order']
 
 
 class TariffSerializer(serializers.ModelSerializer):
+    tariff_band = TariffBandSerializer(many=True, read_only=True, source='bands')
     class Meta:
         model = Tariff
         fields = '__all__'
@@ -203,9 +208,13 @@ class RouteGetSerializer(serializers.ModelSerializer):
 
 
 class TariffGetSerializer(serializers.ModelSerializer):
+    tariff_band = TariffBandSerializer(many=True, read_only=True, source='bands')
     class Meta:
         model = Tariff
-        fields = ['id', 'name', 'NDS', 'NSP', 'kw_cost']
+        fields = [
+                'id', 'name', 'NDS', 'NSP', 'kw_cost',
+                'pricing_type', 'tariff_bands', 'created_at', 'updated_at'
+            ]
 
 
 
@@ -310,9 +319,13 @@ class AddressUserListSerializer(serializers.ModelSerializer):
         fields = ['street', 'house', 'liter', 'apartment', 'apartment_liter']
 
 class TariffUserListSerializer(serializers.ModelSerializer):
+    tariff_band = TariffBandSerializer(many=True, read_only=True, source='bands')
     class Meta:
         model = Tariff
-        fields = ['kw_cost']
+        fields = [
+                'id', 'name', 'NDS', 'NSP', 'kw_cost',
+                'pricing_type', 'tariff_bands', 'created_at', 'updated_at'
+            ]
 
 class HouseCardUserListSerializer(serializers.ModelSerializer):
     address = AddressUserListSerializer()
