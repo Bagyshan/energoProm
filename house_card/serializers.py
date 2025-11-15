@@ -213,7 +213,7 @@ class TariffGetSerializer(serializers.ModelSerializer):
         model = Tariff
         fields = [
                 'id', 'name', 'NDS', 'NSP', 'kw_cost',
-                'pricing_type', 'tariff_bands', 'created_at', 'updated_at'
+                'pricing_type', 'tariff_band', 'created_at', 'updated_at'
             ]
 
 
@@ -324,7 +324,7 @@ class TariffUserListSerializer(serializers.ModelSerializer):
         model = Tariff
         fields = [
                 'id', 'name', 'NDS', 'NSP', 'kw_cost',
-                'pricing_type', 'tariff_bands', 'created_at', 'updated_at'
+                'pricing_type', 'tariff_band', 'created_at', 'updated_at'
             ]
 
 class HouseCardUserListSerializer(serializers.ModelSerializer):

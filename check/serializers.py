@@ -17,32 +17,32 @@ class UserShortSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'name']
 
-class StreetSerializer(serializers.ModelSerializer):
+class CheckStreetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Street
         fields = ['name']
 
-class AddressSerializer(serializers.ModelSerializer):
-    street = StreetSerializer()
+class CheckAddressSerializer(serializers.ModelSerializer):
+    street = CheckStreetSerializer()
 
     class Meta:
         model = Address
         fields = ['street', 'house', 'liter', 'apartment', 'apartment_liter']
 
-class ExecutorSerializer(serializers.ModelSerializer):
+class CheckExecutorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Executor
         fields = ['name']
 
 class RouteSerializer(serializers.ModelSerializer):
-    executor = ExecutorSerializer()
+    executor = CheckExecutorSerializer()
 
     class Meta:
         model = Route
         fields = ['route_number', 'executor']
 
 class HouseCardShortSerializer(serializers.ModelSerializer):
-    address = AddressSerializer()
+    address = CheckAddressSerializer()
     route = RouteSerializer()
     
     class Meta:
@@ -57,7 +57,7 @@ class HouseCardShortSerializer(serializers.ModelSerializer):
 
 
 from house_card.serializers import TariffBandSerializer
-class TariffSerializer(serializers.ModelSerializer):
+class CheckTariffSerializer(serializers.ModelSerializer):
     tariff_band = TariffBandSerializer(many=True, read_only=True, source='bands')
     class Meta:
         model = Tariff
@@ -71,7 +71,7 @@ class TariffSerializer(serializers.ModelSerializer):
 class CheckSerializer(serializers.ModelSerializer):
     house_card = HouseCardShortSerializer()
     username = UserShortSerializer()
-    tariff = TariffSerializer()
+    tariff = CheckTariffSerializer()
     counter_photo = serializers.SerializerMethodField()
     class Meta:
         model = Check

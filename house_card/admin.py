@@ -118,42 +118,42 @@ class HouseCardAdmin(ImportExportModelAdmin):
     ]
     readonly_fields = ['registered_at', 'updated_at']
     
-    fieldsets = (
-        ('Основная информация', {
-            'fields': (
-                'house_card', 
-                'old_house_card',
-                'user', 
-                'address',
-            )
-        }),
-        ('Договорные данные', {
-            'fields': (
-                'contract_number',
-                'contract_date', 
-                'tp_number',
-            )
-        }),
-        ('Технические данные', {
-            'fields': (
-                'household_needs',
-                'fact_summer', 
-                'fact_winter',
-                'max_summer', 
-                'max_winter',
-            )
-        }),
-        ('Финансовые данные', {
-            'fields': (
-                'overpayment_underpayment',
-                'penalty',
-            )
-        }),
-        ('Системные данные', {
-            'fields': (
-                'registered_at',
-                'updated_at',
-            ),
-            'classes': ('collapse',)
-        }),
-    )
+    # fieldsets = (
+    #     ('Основная информация', {
+    #         'fields': (
+    #             'house_card', 
+    #             'old_house_card',
+    #             'user', 
+    #             'address',
+    #         )
+    #     }),
+    #     ('Договорные данные', {
+    #         'fields': (
+    #             'contract_number',
+    #             'contract_date', 
+    #             'tp_number',
+    #         )
+    #     }),
+    #     ('Технические данные', {
+    #         'fields': (
+    #             'household_needs',
+    #             'fact_summer', 
+    #             'fact_winter',
+    #             'max_summer', 
+    #             'max_winter',
+    #         )
+    #     }),
+    #     ('Финансовые данные', {
+    #         'fields': (
+    #             'overpayment_underpayment',
+    #             'penalty',
+    #         )
+    #     }),
+    #     ('Системные данные', {
+    #         'fields': (
+    #             'registered_at',
+    #             'updated_at',
+    #         ),
+    #         'classes': ('collapse',)
+    #     }),
+    # )
