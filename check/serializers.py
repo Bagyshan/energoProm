@@ -339,6 +339,8 @@ import math
 from django.db import transaction
 import logging
 from rest_framework import serializers
+import os
+from django.core.files.storage import default_storage
 
 def custom_round(value: Decimal | float) -> float:
     if value is None:
@@ -363,6 +365,50 @@ class CheckVerificationUpdateSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("Показание не может быть отрицательным.")
         return value
+
+    def permanently_delete_photo(self, instance: Check):
+        """
+        Полностью удаляет фотографию из файловой системы и базы данных.
+        Возвращает True если файл был удален, False если файла не было.
+        """
+        if not instance.counter_photo:
+            return False
+
+        file_deleted = False
+        db_cleared = False
+        
+        try:
+            # 1. УДАЛЕНИЕ ИЗ ФАЙЛОВОЙ СИСТЕМЫ
+            file_name = instance.counter_photo.name
+            if file_name and default_storage.exists(file_name):
+                default_storage.delete(file_name)
+                file_deleted = True
+                logging.info(f"✓ Файл УДАЛЕН из файловой системы: {file_name}")
+            else:
+                logging.warning(f"Файл не найден в storage: {file_name}")
+            
+            # 2. ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА через os.path (на всякий случай)
+            if hasattr(instance.counter_photo, 'path'):
+                absolute_path = instance.counter_photo.path
+                if os.path.exists(absolute_path):
+                    os.remove(absolute_path)
+                    file_deleted = True
+                    logging.info(f"✓ Файл УДАЛЕН через os.path: {absolute_path}")
+            
+        except Exception as e:
+            logging.error(f"❌ Ошибка при удалении файла: {e}")
+        
+        try:
+            # 3. ОЧИСТКА ПОЛЯ В БАЗЕ ДАННЫХ
+            instance.counter_photo = None
+            db_cleared = True
+            instance.save(update_fields=['counter_photo'])
+            logging.info(f"✓ Ссылка на файл очищена в БД для чека ID: {instance.id}")
+            
+        except Exception as e:
+            logging.error(f"❌ Ошибка при очистке поля в БД: {e}")
+        
+        return file_deleted and db_cleared
 
     def update(self, instance: Check, validated_data):
         counter = validated_data.get('counter_current_check')
@@ -427,6 +473,15 @@ class CheckVerificationUpdateSerializer(serializers.ModelSerializer):
             instance.previous_check_date = previous_check_date
 
             instance.save()
+
+
+            # ⭐⭐⭐ ГЛАВНОЕ: УДАЛЕНИЕ ФОТОГРАФИИ ПРИ ПОДТВЕРЖДЕНИИ ⭐⭐⭐
+            if instance.verified:
+                photo_was_deleted = self.permanently_delete_photo(instance)
+                if photo_was_deleted:
+                    logging.info(f"🎯 Фотография ПОЛНОСТЬЮ УДАЛЕНА для чека ID: {instance.id}")
+                elif instance.counter_photo:
+                    logging.warning(f"⚠️ Фотография НЕ УДАЛЕНА для чека ID: {instance.id}")
 
         # Push notification (как у вас было)
         try:

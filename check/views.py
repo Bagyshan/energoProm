@@ -549,6 +549,7 @@ class CheckVerificationUpdateAPIView(generics.UpdateAPIView):
         responses={200: CheckVerificationUpdateSerializer()}
     )
     def patch(self, request, *args, **kwargs):
+        
         return super().patch(request, *args, **kwargs)
 
 @extend_schema(
