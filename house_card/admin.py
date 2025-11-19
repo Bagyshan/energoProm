@@ -57,6 +57,7 @@ class AddressAdmin(admin.ModelAdmin):
 @admin.register(Executor)
 class ExecutorAdmin(admin.ModelAdmin):
     list_display = ('id', )
+    search_fields = ['name']
 
 @admin.register(CounterCause)
 class CounterCauseAdmin(admin.ModelAdmin):
@@ -65,10 +66,12 @@ class CounterCauseAdmin(admin.ModelAdmin):
 @admin.register(CounterType)
 class CounterTypeAdmin(admin.ModelAdmin):
     list_display = ('id', )
+    search_fields = ['model']
 
 @admin.register(Counter)
 class CounterAdmin(admin.ModelAdmin):
     list_display = ('id', )
+    search_fields = ['serial_number', 'counter_type__model', 'executor__name']
 
 
 
@@ -77,11 +80,12 @@ class CounterAdmin(admin.ModelAdmin):
 @admin.register(Plot)
 class PlotAdmin(admin.ModelAdmin):
     list_display = ('id', )
+    search_fields = ['code', 'name']
 
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):
     list_display = ('id', )
-
+    search_fields = ['route_number', 'plot__name', 'plot__code']
 
 
 
@@ -93,6 +97,7 @@ class TariffBandInline(admin.TabularInline):
 class TariffAdmin(admin.ModelAdmin):
     inlines = [TariffBandInline]
     list_display = ('id', )
+    search_fields = ['name']
 
 
 
@@ -100,11 +105,13 @@ class TariffAdmin(admin.ModelAdmin):
 
 @admin.register(HouseCard)
 class HouseCardAdmin(ImportExportModelAdmin):
+    autocomplete_fields = ['user', 'address', 'plot', 'route', 'counter', 'tariff']
     resource_class = HouseCardImportResource
     list_display = [
         'house_card', 
         'old_house_card', 
         'user', 
+        'user__name',
         'address', 
         'contract_number',
         'tp_number'
@@ -113,6 +120,7 @@ class HouseCardAdmin(ImportExportModelAdmin):
     search_fields = [
         'house_card', 
         'old_house_card', 
+        'user__email',
         'user__name',
         'address__street__name'
     ]

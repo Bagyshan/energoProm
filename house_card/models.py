@@ -1,5 +1,6 @@
 from django.db import models
 from user.models import User
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
@@ -10,6 +11,9 @@ class District(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.name
+
 class GosAdministration(models.Model):
     district = models.ForeignKey(
         District,
@@ -19,6 +23,9 @@ class GosAdministration(models.Model):
     name = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
     
 class Settlement(models.Model):
     administration = models.ForeignKey(
@@ -30,6 +37,9 @@ class Settlement(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.name
+
 class Street(models.Model):
     settlement = models.ForeignKey(
         Settlement,
@@ -39,6 +49,9 @@ class Street(models.Model):
     name = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
     
 class Address(models.Model):
     street = models.ForeignKey(
@@ -54,6 +67,9 @@ class Address(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.house + ", " + self.street.name + ", " + self.street.settlement.name + ", " + self.street.settlement.administration.name + ", " + self.street.settlement.administration.district.name
+
 
 
 
@@ -63,11 +79,17 @@ class Executor(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.name
+
 
 class CounterCause(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
 class CounterType(models.Model):
     model = models.CharField(max_length=100)
@@ -77,6 +99,8 @@ class CounterType(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.model
 
 
 class Counter(models.Model):
@@ -112,6 +136,9 @@ class Counter(models.Model):
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.serial_number or f"Counter {self.id}"
+
 # Tariff models
 
 # class Tariff(models.Model):
@@ -141,6 +168,9 @@ class Tariff(models.Model):
     pricing_type = models.CharField(max_length=10, choices=PRICING_CHOICES, default=PRICING_FLAT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
     def calculate_energy_charge(self, consumption) -> Decimal:
         """
@@ -234,6 +264,9 @@ class Plot(models.Model):
     controller = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name + " (" + str(self.code) + ")"
     
     # house_card_count
 
@@ -253,6 +286,9 @@ class Route(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return str(self.route_number) + " - " + " (" + str(self.plot.code) + ") "+ self.plot.name 
+
     # house_card_count
 
 
@@ -261,60 +297,68 @@ class Route(models.Model):
 # House Card model
 
 class HouseCard(models.Model):
-    house_card = models.CharField(max_length=50, default=0, unique=True)
-    old_house_card = models.CharField(max_length=50, default=0, null=True, blank=True, unique=False)
+    house_card = models.CharField(_("Лицевой счет"), max_length=50, default=0, unique=True)
+    old_house_card = models.CharField(_("Старый лицевой счет"), max_length=50, default=0, null=True, blank=True, unique=False)
     address = models.ForeignKey(
         Address,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='house_cards'
+        verbose_name=_("Адрес"),
+        related_name='house_cards',
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='house_cards'
+        related_name='house_cards',
+        verbose_name=_("Пользователь")
     )
-    contract_number = models.CharField(null=True, blank=True)
-    contract_date = models.DateField(null=True, blank=True)
+    contract_number = models.CharField(_("Номер договора"), null=True, blank=True)
+    contract_date = models.DateField(_("Дата заключения договора"), null=True, blank=True)
     plot = models.ForeignKey(
         Plot,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='house_cards'
+        related_name='house_cards',
+        verbose_name=_("Участок")
     )
     route = models.ForeignKey(
         Route,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='house_cards'
+        related_name='house_cards',
+        verbose_name=_("Маршрут")
     )
 
     counter = models.ForeignKey(
         Counter,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='house_cards'
+        related_name='house_cards',
+        verbose_name=_("Счетчик")
     )
     tariff = models.ForeignKey(
         Tariff,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='house_cards'
+        related_name='house_cards',
+        verbose_name=_("Тариф")
     )
 
-    tp_number = models.PositiveIntegerField(null=True, blank=True)
-    household_needs = models.FloatField(null=True, blank=True)
-    fact_summer = models.FloatField(null=True, blank=True)
-    fact_winter = models.FloatField(null=True, blank=True)
-    max_summer = models.FloatField(null=True, blank=True)
-    max_winter = models.FloatField(null=True, blank=True)
+    tp_number = models.PositiveIntegerField(_("Номер ТП"), null=True, blank=True)
+    household_needs = models.FloatField(_("Хозяйственные нужды"), null=True, blank=True)
+    fact_summer = models.FloatField(_("Факт (лето)"), null=True, blank=True)
+    fact_winter = models.FloatField(_("Факт (зима)"), null=True, blank=True)
+    max_summer = models.FloatField(_("Макс (лето)"), null=True, blank=True)
+    max_winter = models.FloatField(_("Макс (зима)"), null=True, blank=True)
 
-    overpayment_underpayment = models.FloatField(default=0)
-    penalty = models.FloatField(default=0)
+    overpayment_underpayment = models.FloatField(_("Переплата/Задолженность"), default=0)
+    penalty = models.FloatField(_("Пеня"), default=0)
 
+    registered_at = models.DateTimeField(_("Дата регистрации"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
-    registered_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.house_card
 
     # Counter
     # Tariff
