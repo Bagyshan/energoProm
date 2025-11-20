@@ -6,6 +6,7 @@ from .models import Check
 @admin.register(Check)
 class CheckAdmin(admin.ModelAdmin):
     list_display = ('id', )
+    autocomplete_fields = ['username', 'house_card', 'tariff']
 # Register your models here.
 
 
