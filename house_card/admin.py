@@ -108,14 +108,22 @@ class HouseCardAdmin(ImportExportModelAdmin):
     autocomplete_fields = ['user', 'address', 'plot', 'route', 'counter', 'tariff']
     resource_class = HouseCardImportResource
     list_display = [
+        'id',
         'house_card', 
         'old_house_card', 
         'user', 
-        'user__name',
-        'address', 
-        'contract_number',
-        'tp_number'
+        'get_user_name',
+        'address',
     ]
+
+    list_select_related = ['user', 'address']  # Оптимизация запросов
+    
+    def get_user_name(self, obj):
+        return obj.user.name if obj.user else '-'
+    
+    get_user_name.short_description = 'Имя пользователя'
+    get_user_name.admin_order_field = 'user__name'
+
     list_filter = ['tp_number', 'contract_date']
     search_fields = [
         'house_card', 
