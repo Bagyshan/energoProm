@@ -236,7 +236,7 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool)
-
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', 10))
 
 
 SMS_LOGIN = os.getenv('SMS_LOGIN')
