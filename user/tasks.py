@@ -17,7 +17,14 @@ def sanitize_email(email):
 
 
 
-@shared_task
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={'max_retries': 5},
+    soft_time_limit=20,
+    time_limit=30
+)
 def send_verificaation_code(application_id):
 
     try:
@@ -38,7 +45,14 @@ def send_verificaation_code(application_id):
     email_message.send(fail_silently=False)
 
 
-@shared_task
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={'max_retries': 5},
+    soft_time_limit=20,
+    time_limit=30
+)
 def send_password_reset_code(user_id):
     user = User.objects.get(id=user_id)
     subject = 'Восстановление пароля'
@@ -47,7 +61,14 @@ def send_password_reset_code(user_id):
     send_mail(subject, message, sanitize_email(from_email), [sanitize_email(user.email)])
 
 
-@shared_task
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={'max_retries': 5},
+    soft_time_limit=20,
+    time_limit=30
+)
 def send_verificaation_code_to_new_email(user_id):
     user = User.objects.get(id=user_id)
     from_email = 'flagman-inc@yandex.ru'
