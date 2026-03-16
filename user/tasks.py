@@ -25,7 +25,7 @@ def sanitize_email(email):
     soft_time_limit=20,
     time_limit=30
 )
-def send_verificaation_code(application_id):
+def send_verificaation_code(self, application_id):
 
     try:
         application = User.objects.get(pk=application_id)
