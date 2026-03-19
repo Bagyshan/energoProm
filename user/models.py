@@ -74,12 +74,12 @@ class User(AbstractBaseUser, PermissionsMixin):
             raise ValueError('User must have an email')
         super(User, self).save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        if not self.is_superuser:
-            self.is_delete = True
-            self.save()
-        else:
-            self.delete()
+    # def delete(self, *args, **kwargs):
+    #     if not self.is_superuser:
+    #         self.is_delete = True
+    #         self.save()
+    #     else:
+    #         self.delete()
             
     class Meta:
         verbose_name = _('Пользователь')
