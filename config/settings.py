@@ -299,3 +299,20 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+ADMIN_TOOLS_MENU = [
+    {
+        'title': 'Лицевые счета',
+        'items': [
+            {'model': 'house_card.HouseCard', 'title': 'Лицевые счета'},
+        ]
+    },
+    {
+        'title': 'Счетчики',
+        'items': [
+            {'model': 'house_card.Counter', 'title': 'Счетчики'},
+            {'model': 'house_card.CounterType', 'title': 'Типы счетчиков'},
+            {'model': 'house_card.Executor', 'title': 'Исполнители'},
+        ]
+    },
+]

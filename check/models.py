@@ -52,16 +52,23 @@ class Check(models.Model):
     created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
     updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
+    def __str__(self):
+        return self.pk.__str__()
+    
+    class Meta:
+        verbose_name = _('Счет')
+        verbose_name_plural = _('Счета')
+
 
 
 class PaymentTransaction(models.Model):
-    check_fk = models.ForeignKey(Check, on_delete=models.CASCADE, related_name='payments')
-    requisite = models.CharField(max_length=64)
-    txn_id = models.CharField(max_length=128, null=True, blank=True)
-    source = models.CharField(max_length=128, null=True, blank=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    paid_date = models.DateField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    check_fk = models.ForeignKey(Check, on_delete=models.CASCADE, related_name='payments', verbose_name=_("Счет"))
+    requisite = models.CharField(_("Платежные реквизиты"), max_length=64)
+    txn_id = models.CharField(_("ID транзакции"), max_length=128, null=True, blank=True)
+    source = models.CharField(_("Источник"), max_length=128, null=True, blank=True)
+    amount = models.DecimalField(_("Сумма"), max_digits=12, decimal_places=2)
+    paid_date = models.DateField(_("Дата оплаты"), null=True, blank=True)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -69,6 +76,8 @@ class PaymentTransaction(models.Model):
             models.Index(fields=['requisite']),
             models.Index(fields=['txn_id']),
         ]
+        verbose_name = _('Платежная транзакция')
+        verbose_name_plural = _('Платежные транзакции')
 
     def __str__(self):
         return f"PaymentTransaction(check={self.check_fk}, txn={self.txn_id}, amount={self.amount})"

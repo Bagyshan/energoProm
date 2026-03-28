@@ -7,100 +7,136 @@ from django.utils.translation import gettext_lazy as _
 
 # Address models
 class District(models.Model):
-    name = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_("Название"), max_length=50)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = _('Район')
+        verbose_name_plural = _('Районы')
 
 class GosAdministration(models.Model):
     district = models.ForeignKey(
         District,
         on_delete=models.CASCADE,
-        related_name='administrations'
+        related_name='administrations',
+        verbose_name=_("Район")
     )
-    name = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_("Название"), max_length=50)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name
     
+    class Meta:
+        verbose_name = _('Гос. администрация')
+        verbose_name_plural = _('Гос. администрации')
+
 class Settlement(models.Model):
     administration = models.ForeignKey(
         GosAdministration,
         on_delete=models.CASCADE,
-        related_name='settlements'
+        related_name='settlements',
+        verbose_name=_("Гос. администрация")
     )
-    name = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_("Название"), max_length=50)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = _('Населенный пункт')
+        verbose_name_plural = _('Населенные пункты')
 
 class Street(models.Model):
     settlement = models.ForeignKey(
         Settlement,
         on_delete=models.CASCADE,
-        related_name='streets'
+        related_name='streets',
+        verbose_name=_("Населенный пункт")
     )
-    name = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_("Название"), max_length=50)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name
     
+    class Meta:
+        verbose_name = _('Улица')
+        verbose_name_plural = _('Улицы')
+
 class Address(models.Model):
     street = models.ForeignKey(
         Street,
         on_delete=models.CASCADE,
         related_name='addresses',
-        blank=True
+        blank=True,
+        verbose_name=_("Улица")
     )
-    house = models.CharField(blank=True)
-    liter = models.CharField(max_length=8, null=True, blank=True)
-    apartment = models.CharField(max_length=8, null=True, blank=True)
-    apartment_liter = models.CharField(max_length=8, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    house = models.CharField(_("Дом"), blank=True)
+    liter = models.CharField(_("Литера"), max_length=8, null=True, blank=True)
+    apartment = models.CharField(_("Квартира"), max_length=8, null=True, blank=True)
+    apartment_liter = models.CharField(_("Литера квартиры"), max_length=8, null=True, blank=True)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.house + ", " + self.street.name + ", " + self.street.settlement.name + ", " + self.street.settlement.administration.name + ", " + self.street.settlement.administration.district.name
+    
+    class Meta:
+        verbose_name = _('Адрес')
+        verbose_name_plural = _('Адреса')
 
 
 
 
 # Counter models
 class Executor(models.Model):
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_("Имя"), max_length=100)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = _('Исполнитель')
+        verbose_name_plural = _('Исполнители')
 
 
 class CounterCause(models.Model):
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_("Причина"), max_length=100)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = _('Причина установки счетчика')
+        verbose_name_plural = _('Причины установки счетчиков')
 
 class CounterType(models.Model):
-    model = models.CharField(max_length=100)
-    significance = models.PositiveSmallIntegerField()
-    amperage_range = models.CharField(max_length=50)
-    current_transformation_ratio = models.PositiveSmallIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    model = models.CharField(_("Модель"), max_length=100)
+    significance = models.PositiveSmallIntegerField(_("Значимость"))
+    amperage_range = models.CharField(_("Диапазон тока"), max_length=50)
+    current_transformation_ratio = models.PositiveSmallIntegerField(_("Коэффициент трансформации"))
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.model
+    
+    class Meta:
+        verbose_name = _('Тип счетчика')
+        verbose_name_plural = _('Типы счетчиков')
 
 
 class Counter(models.Model):
@@ -109,35 +145,42 @@ class Counter(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='counters',
-        blank=True
+        blank=True,
+        verbose_name=_("Причина установки счетчика")
     )
     executor = models.ForeignKey(
         Executor,
         on_delete=models.SET_NULL,
         null=True,
         related_name='counters',
-        blank=True
+        blank=True,
+        verbose_name=_("Исполнитель")
     )
-    serial_number = models.CharField(max_length=50, blank=True)
+    serial_number = models.CharField(_("Серийный номер"), max_length=50, blank=True)
     counter_type = models.ForeignKey(
         CounterType,
         on_delete=models.SET_NULL,
         null=True,
         related_name='counters',
-        blank=True
+        blank=True,
+        verbose_name=_("Тип счетчика")
     )
-    pp_number = models.PositiveIntegerField(blank=True, null=True)
-    current_indication = models.PositiveIntegerField(default=0, blank=True)
-    year_of_state_inspection = models.PositiveSmallIntegerField(blank=True)
-    quarter_of_state_inspection = models.PositiveSmallIntegerField(blank=True)
-    energy_sales_seal = models.CharField(max_length=50, null=True, blank=True)
-    CRPU_seal = models.CharField(max_length=50, null=True, blank=True)
-    seal_on_the_casing = models.CharField(max_length=50, null=True, blank=True)
-    registered_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    pp_number = models.PositiveIntegerField(_("Номер ПП"), blank=True, null=True)
+    current_indication = models.PositiveIntegerField(_("Текущие показания"), default=0, blank=True)
+    year_of_state_inspection = models.PositiveSmallIntegerField(_("Год технического осмотра"), blank=True)
+    quarter_of_state_inspection = models.PositiveSmallIntegerField(_("Квартал технического осмотра"), blank=True)
+    energy_sales_seal = models.CharField(_("Пломба продажи энергии"), max_length=50, null=True, blank=True)
+    CRPU_seal = models.CharField(_("Пломба CRPU"), max_length=50, null=True, blank=True)
+    seal_on_the_casing = models.CharField(_("Пломба на кожухе"), max_length=50, null=True, blank=True)
+    registered_at = models.DateTimeField(_("Дата регистрации"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.serial_number or f"Counter {self.id}"
+    
+    class Meta:
+        verbose_name = _('Счетчик')
+        verbose_name_plural = _('Счетчики')
 
 # Tariff models
 
@@ -161,13 +204,13 @@ class Tariff(models.Model):
         (PRICING_TIERED, 'Tiered'),
     ]
 
-    name = models.CharField(max_length=100)
-    NDS = models.FloatField(default=0, null=True, blank=True)
-    NSP = models.FloatField(default=0, null=True, blank=True)
-    kw_cost = models.DecimalField(max_digits=12, decimal_places=4, default=Decimal('0.0'))  # for flat pricing
-    pricing_type = models.CharField(max_length=10, choices=PRICING_CHOICES, default=PRICING_FLAT)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_("Название"), max_length=100)
+    NDS = models.FloatField(_("НДС"), default=0, null=True, blank=True)
+    NSP = models.FloatField(_("НСП"), default=0, null=True, blank=True)
+    kw_cost = models.DecimalField(_("Цена за кВтч"), max_digits=12, decimal_places=4, default=Decimal('0.0'))  # for flat pricing
+    pricing_type = models.CharField(_("Тип тарифа"), max_length=10, choices=PRICING_CHOICES, default=PRICING_FLAT)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name
@@ -223,17 +266,21 @@ class Tariff(models.Model):
 
         # финальное округление до стотых
         return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    
+    class Meta:
+        verbose_name = _('Тариф')
+        verbose_name_plural = _('Тарифы')
 
 
 class TariffBand(models.Model):
-    tariff = models.ForeignKey(Tariff, on_delete=models.CASCADE, related_name='bands')
+    tariff = models.ForeignKey(Tariff, on_delete=models.CASCADE, related_name='bands', verbose_name=_("Тариф"))
     # min_kwh inclusive
-    min_kwh = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    min_kwh = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name=_("Мин. кВтч"))
     # max_kwh exclusive (nullable = open ended)
-    max_kwh = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    price_per_kwh = models.DecimalField(max_digits=12, decimal_places=4)
+    max_kwh = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True, verbose_name=_("Макс. кВтч"))
+    price_per_kwh = models.DecimalField(max_digits=12, decimal_places=4, verbose_name=_("Цена за кВтч"))
 
-    order = models.PositiveSmallIntegerField(default=0)  # для удобства сортировки/админки
+    order = models.PositiveSmallIntegerField(default=0, verbose_name=_("Порядок"))  # для удобства сортировки/админки
 
     class Meta:
         ordering = ['order', 'min_kwh']
@@ -250,6 +297,10 @@ class TariffBand(models.Model):
 
     def __str__(self):
         return f"{self.tariff.name}: {self.min_kwh} - {self.max_kwh or '∞'} @ {self.price_per_kwh}"
+    
+    class Meta:
+        verbose_name = _('Этап тарифа')
+        verbose_name_plural = _('Этапы тарифа')
 
 
 
@@ -259,36 +310,45 @@ class TariffBand(models.Model):
 # Plot models
 
 class Plot(models.Model):
-    code = models.PositiveSmallIntegerField()
-    name = models.CharField(max_length=50)
-    controller = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    code = models.PositiveSmallIntegerField(_("Код участка"), unique=True)
+    name = models.CharField(_("Название участка"), max_length=50)
+    controller = models.CharField(_("Контроллер"), max_length=50)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return self.name + " (" + str(self.code) + ")"
     
+    class Meta:
+        verbose_name = _('Участок')
+        verbose_name_plural = _('Участки')
+    
     # house_card_count
 
 class Route(models.Model):
-    route_number = models.PositiveIntegerField()
+    route_number = models.PositiveIntegerField(_("Номер маршрута"))
     plot = models.ForeignKey(
         Plot,
         on_delete=models.CASCADE,
-        related_name='routes'
+        related_name='routes',
+        verbose_name=_("Участок")
     )
     executor = models.ForeignKey(
         Executor,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='routes'
+        related_name='routes',
+        verbose_name=_("Исполнитель")
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Дата обновления"), auto_now=True)
 
     def __str__(self):
         return str(self.route_number) + " - " + " (" + str(self.plot.code) + ") "+ self.plot.name 
 
+    class Meta:
+        verbose_name = _('Маршрут')
+        verbose_name_plural = _('Маршруты')
     # house_card_count
 
 
@@ -359,6 +419,10 @@ class HouseCard(models.Model):
 
     def __str__(self):
         return self.house_card
+
+    class Meta:
+        verbose_name = _('Лицевой счет')
+        verbose_name_plural = _('Лицевые счета')
 
     # Counter
     # Tariff
