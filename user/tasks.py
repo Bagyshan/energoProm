@@ -53,7 +53,7 @@ def send_verificaation_code(self, application_id):
     soft_time_limit=20,
     time_limit=30
 )
-def send_password_reset_code(user_id):
+def send_password_reset_code(self, user_id):
     user = User.objects.get(id=user_id)
     subject = 'Восстановление пароля'
     message = f'Ваш код восстановления: {user.password_reset_code}'
